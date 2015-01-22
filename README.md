@@ -1,2 +1,2 @@
 # Gaia
-Internet Capstone
+A geospacial recommendation system.
