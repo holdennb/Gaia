@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<p id="demo"></p>
+<p id="httpResponse"></p>
+
+<script>
+var x = document.getElementById("demo");
+
+function getLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(showPosition);
+    } else { 
+        x.innerHTML = "Geolocation is not supported by this browser.";
+    }
+}
+
+function showPosition(position) {
+	var lat = position.coords.latitude;
+	var lon = position.coords.longitude;
+    x.innerHTML = "Latitude: " + lat + 
+    "<br>Longitude: " + lon;	
+
+    var xmlhttp
+    var requestURL = "http://127.0.0.1:3000/location/"
+    requestURL = requestURL + lat + "/" + lon;
+    if (window.XMLHttpRequest)
+	  {// code for IE7+, Firefox, Chrome, Opera, Safari
+	  xmlhttp=new XMLHttpRequest();
+	} else {// code for IE6, IE5
+	  xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+	}
+	xmlhttp.open("GET", requestURL, false);
+	xmlhttp.send();
+	document.getElementById("httpResponse").innerHTML = xmlhttp.responseText;
+}
+
+getLocation();
+
+
+</script>
+
+</body>
+</html>
