@@ -1,0 +1,17 @@
+body, html {
+	height: 100%;
+	margin-top: 0px;
+	margin-bottom: 0px;
+}
+
+h1, p {
+	margin: 0px;
+}
+
+#header {
+	height: 25%;
+}
+
+#map {
+	height: 75%;
+}

@@ -33,7 +33,7 @@ function getInstaResponse(req, res) {
     var lat = parseFloat(req.params.lat);
     var lng = parseFloat(req.params.lng);
 
-    ig.location_search({"lat": lat, "lng": lng}, [3000],
+    ig.location_search({"lat": lat, "lng": lng}, [5000],
         function(err, locationsResult, remaining, limit) {
             if (err) {
                 res.send(err);
@@ -45,17 +45,25 @@ function getInstaResponse(req, res) {
                     var id = locationsResult[i].id;
                     location.id = id;
                     location.name = locationsResult[i].name;
+                    location.lat = locationsResult[i].latitude;
+                    location.lng = locationsResult[i].longitude;
                     location.posts = [];
-
+                    var options = {
+                        "min_timestamp": Date.now() - 1000 * 60 * 60 * 24 * 7,
+                        "max_timestamp": Date.now()
+                    };
+                    console.log(options.min_timestamp);
                     (function (thisId, thisLocation) {
                         ig.location_media_recent(thisId,
+                            options,
                         function(err, mediaResult, pagination, remaining, limit) {
                             if (err) {
                                 res.send(err);
                             } else {
                                 for (var j in mediaResult) {
                                     var thisPost = {};
-                                    thisPost.link = mediaResult[j].link;
+                                    // thisPost.link = mediaResult[j].link;
+                                    thisPost.date = (new Date(mediaResult[j].created_time * 1000)).toString();
                                     thisLocation.posts.push(thisPost);
                                 }
                                 // inner done
