@@ -6,27 +6,11 @@ var app = express();
 var ig = require("instagram-node").instagram();
 var graph = require('fbgraph');
 
-graph.setAccessToken('1584238351793353|d-YwDPT2Tueuy9zXp1YiCZSSB9k');
-
-// var searchOptions = {
-//     q:     "coffee",
-//     type:  "place",
-//     center: "47.6668621,-122.3163902",
-//     distance: "3000"
-// };
- 
-// graph.search(searchOptions, function(err, res) {
-//     for (var j in res['data']) {
-//         console.log(res['data'][j].location); // {data: [{id: xxx, from: ...}, {id: xxx, from: ...}]} 
-//     }
-//     // console.log(res['data'].length);
-// });
-
-
-
-
 // Log the requests
 app.use(logger("dev"));
+
+// FB credentials
+graph.setAccessToken('1584238351793353|d-YwDPT2Tueuy9zXp1YiCZSSB9k');
 
 // Set up instagram credentials
 ig.use({ client_id: '3f4a2693d5cc46a4b0686ae1e8df389a',
@@ -41,7 +25,6 @@ app.get("/ig_media/:ig_place_id", get_ig_media);
 
 // Route for everything else.
 app.get("*", function(req, res){
-    console.log("-------- 404 OCCURED");
     res.send("404");
 });
 
@@ -50,6 +33,8 @@ app.listen(3000);
 console.log("Listening on port 3000");
 var json_out = [];
 var res;
+
+// Request to get Instagram locations given a latitude and a longitude
 function get_ig_places(req, result) {
     // Search for media posted in the last 2 days within 5000 meters
     //  of the given location
@@ -68,27 +53,25 @@ function get_ig_places(req, result) {
     graph.search(searchOptions, get_fb_places);
 }
 
+// Request to get Instagram locations (from Facebook places) given certain options.
 function get_fb_places(err, fb_res) {
-    console.log("get_fb_places called");
     if(fb_res.paging && fb_res.paging.next) {
         graph.get(fb_res.paging.next, get_fb_places);
     }
 
     var fb_places_remaining = fb_res['data'].length;
-    // console.log(fb_res);
     for (var j in fb_res['data']) {
 
         ig.location_search({"facebook_places_id": fb_res['data'][j].id},
             function(err, locationsResult, remaining, limit) {
                 if (err) {
-                    console.log("-------- ERROR OCCURED: " + JSON.stringify(err));
+                    console.log("ERROR OCCURED: " + JSON.stringify(err));
                     res.send(err);
                 } else {
 
                     for (var i in locationsResult) {
                         var location = {};
                         location.ig_place_id = locationsResult[i].id;
-                        console.log(location.ig_place_id);
                         location.name = locationsResult[i].name;
                         location.lat = locationsResult[i].latitude;
                         location.lng = locationsResult[i].longitude;
@@ -97,21 +80,18 @@ function get_fb_places(err, fb_res) {
                     }
                     --fb_places_remaining;
                     if (fb_places_remaining <= 0) {
-                        console.log("-------- ABOUT TO SEND. YES RESULTS");
                         res.json(json_out);
                         return;
                     }
-                    // done
-
                 }
             });
-        }
+     }
+}
 
-    }
-
-
+// Request to get Instagram posts given an Instagram location ID.
 function get_ig_media(req, result) {
     var ig_place_id = req.params.ig_place_id;
+    // JSON, array of Insta posts
     var json_out = [];
 
     var options = {
