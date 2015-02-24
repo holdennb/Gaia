@@ -27,6 +27,31 @@ function checkLongitude(n) {
 	return n <= 180 && n >= -180; 
 }
 
+function printJson(data) {
+	var result = ""; 
+	if (data.length == 0) {
+		result = "<p> There's no matching results. </p>"
+		return result;
+	}
+	for (var i = 0; i < data.length; i++) {
+		result = result +  "<p>";
+		result = result +  "{ <br>";
+		result = result +  "	\"_id\": " + data[i]._id + "<br>";
+		result = result +  "	\"longitude\": " + data[i].longitude  + "<br>";
+		result = result +  "	\"latitude\": " + data[i].latitude + "<br>";
+		result = result +  "	\"title\": " + data[i].title + "<br>";
+		result = result +  "	\"source\": " + data[i].source + "<br>";
+		result = result +  "	\"description\": " + data[i].description + "<br>";
+		result = result +  "	\"imageURL\": " + data[i].imageURL + "<br>";
+		result = result +  "	\"text\": " + data[i].text + "<br>";
+		result = result +  "	\"premanentLink\": " + data[i].premanentLink + "<br>";
+		result = result +  "	\"time_created\": " + data[i].time_created + "<br>";
+		result = result +  "} <br>";
+		result = result +  "<\p>";
+	}
+	return result;
+}
+
 function httpRequestDB()
 {
 	document.getElementById("checkInput").innerHTML = "";
@@ -34,11 +59,20 @@ function httpRequestDB()
 	var maxlat = $('#maxlat').val();
 	var minlon = $('#minlon').val();
 	var maxlon = $('#maxlon').val();
-	var filled = 0;
+
+	var rangelat = maxlat - minlat;
+	var rangelon = maxlon - minlon;
+
+	/*
+	47.62531864125
+	47.715149758749995
+	-122.36426075875
+	-122.27442964125
+	*/
 
 	if (!checkLatitude(minlat) | !checkLatitude(maxlat) | !checkLongitude(minlon) | !checkLongitude(maxlon))  {
 		document.getElementById("checkInput").innerHTML = "All inputs have to be valid coordinate integers. \n"
-	} else if (maxlon < minlon | maxlat < minlat) {
+	} else if (rangelat < 0.0 | rangelon < 0.0) {		
 		document.getElementById("checkInput").innerHTML = "Input Min is greater than input Max. \n"
 	} else {
 		/* data looks like this:
@@ -56,17 +90,18 @@ function httpRequestDB()
 		    "time_created": "2015-02-17T23:30:57.813Z"
 		  }
 		]
-
 		// access json data by: data[0]["_id"]   OR   data[0].longitude
 		*/
+		var url_string = 'http://128.208.1.140:3000/gaia?minlat='+minlat+'&maxlat='+maxlat+'&minlon='+minlon+'&maxlon='+maxlon;
+		console.log(url_string);
 		$.ajax({
-		    url: 'http://128.208.1.140:3000/gaia?minlat='+minlat+'&maxlat='+maxlat+'&minlon='+minlon+'&maxlon='+maxlon,
+		    url: url_string,
 		    type: 'GET',
 		    headers: {"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods" : "GET,POST,PUT,DELETE,OPTIONS", "Access-Control-Allow-Headers": "Content-Type, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Authorization, X-Requested-With"} ,
 		    crossDomain: true,
 		    dataType: 'json',
-		    success: function(data) {  document.getElementById("myDiv").innerHTML="success " +  " " + data[0]["_id"] + data[0].longitude;},
-		    error: function(data) { document.getElementById("myDiv").innerHTML="error" + data;}
+		    success: function(data) { var result = printJson(data); document.getElementById("myDiv").innerHTML="success\n " + result },
+		    error: function(data) { document.getElementById("myDiv").innerHTML="error " + data;}
 		});
 	}
 	
