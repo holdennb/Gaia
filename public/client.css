@@ -20,3 +20,18 @@ h1, p {
 #map {
 	height: 75%;
 }
+
+#top-results, #top-three {
+	display: none;
+	margin-bottom: 0px;
+}
+
+#top-three li {
+	cursor: pointer;
+	text-decoration: underline;
+	margin-top: 4px;
+}
+
+#top-three li.active {
+	font-weight: bold;
+}

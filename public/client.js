@@ -17,9 +17,27 @@ $(document).ready(function() {
         $.getJSON("http://maps.googleapis.com/maps/api/geocode/json?address="
             + encodeURIComponent($("#address").val()),
             function(data) {
-                if (data.results.length) {
+                console.log(data.results);
+                if (data.results.length == 1) {
                     processRequest(data.results[0].geometry.location.lat,
                         data.results[0].geometry.location.lng);
+                } else if (data.results.length > 1) {
+                    $("#top-three").html("");
+                    for (var i = 0; i < Math.min(4, data.results.length); i++) {
+                        var result = data.results[i];
+                        var item = $("<li></li>");
+                        item.attr("data-lat", result.geometry.location.lat);
+                        item.attr("data-lng", result.geometry.location.lng);
+                        item.text(result.formatted_address);
+                        item.click(function() {
+                            $(this).siblings().removeClass("active");
+                            $(this).addClass("active");
+                            processRequest($(this).attr("data-lat"), $(this).attr("data-lng"));
+                        });
+
+                        $("#top-results, #top-three").show();
+                        $("#top-three").append(item);
+                    }
                 } else {
                     $("#error p").text("Address not found.");
                 }
@@ -41,7 +59,6 @@ function processRequest(lat, lng) {
     var infowindow = new google.maps.InfoWindow();
 
     // Query server to get JSON for locations
-    console.log("about to request");
     $.getJSON("http://127.0.0.1:3000/ig_places/" + lat + "/" + lng,
         function (data) {
             // $("#http-response").text(JSON.stringify(data));
