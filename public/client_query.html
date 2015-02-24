@@ -71,7 +71,7 @@ function httpRequestDB()
 	*/
 
 	if (!checkLatitude(minlat) | !checkLatitude(maxlat) | !checkLongitude(minlon) | !checkLongitude(maxlon))  {
-		document.getElementById("checkInput").innerHTML = "All inputs have to be valid coordinate integers. \n"
+		document.getElementById("checkInput").innerHTML = "All inputs have to be valid coordinate integers. Latitude should be [-90,90] and longitude should be [-180,180]. \n"
 	} else if (rangelat < 0.0 | rangelon < 0.0) {		
 		document.getElementById("checkInput").innerHTML = "Input Min is greater than input Max. \n"
 	} else {
