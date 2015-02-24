@@ -1,4 +1,4 @@
-var http = require('http');
+var request = require('request');
 var path = require("path");
 var express = require("express");
 var logger = require("morgan");
@@ -17,7 +17,7 @@ ig.use({ client_id: '3f4a2693d5cc46a4b0686ae1e8df389a',
      client_secret: '57ed45f5db08440eb435d676208b4c34' });
 
 // Serve static files
-app.use(express.static(path.join(__dirname, "public"))); 
+app.use(express.static(path.join(__dirname, "public")));
 
 // Handle location request
 app.get("/ig_places/:lat/:lng", get_ig_places);
@@ -31,6 +31,7 @@ app.get("*", function(req, res){
 // Start server
 app.listen(3000);
 console.log("Listening on port 3000");
+
 var json_out = [];
 var res;
 
@@ -42,27 +43,59 @@ function get_ig_places(req, result) {
     var lat = parseFloat(req.params.lat);
     var lng = parseFloat(req.params.lng);
 
-
     var searchOptions = {
         q:     "parks",
         type:  "place",
         center: lat + "," + lng,
         distance: "3000"
     };
-    
-    graph.search(searchOptions, get_fb_places);
+
+    var minlon = lng - 10 * 0.00898311175;   // 10000m
+    var maxlon = lng + 10 * 0.00898311175;
+    var minlat = lat - 10 * 0.00898311175;
+    var maxlat = lat + 10 * 0.00898311175;
+
+
+    request({
+        url: "http://128.208.1.140:3000/gaia?minlon=" + minlon
+                + "&maxlon=" + maxlon + "&minlat=" + minlat + "&maxlat=" + maxlat,
+        // url: "http://128.208.1.140:3000/gaia?minlon=-123.3193702&maxlon=-121.3193702&minlat=46.6700333&maxlat=48.6700333",
+        // qs: JSON.stringify(propertiesObject)
+    }, function(err, dbResult, body) {
+        if (err) {
+            console.log("Got error: " + err);
+        } else {
+            // console.log(dbResult);
+            var body = JSON.parse(dbResult.body);
+            if (body.length) {
+                console.log("found data.");
+                res.json(body);
+            } else {
+                console.log("didn't find data. searching.");
+                graph.search(searchOptions, get_fb_places);
+            }
+        }
+        });
+
+    console.log("http://128.208.1.140:3000/gaia?minlon=" + minlon
+                + "&maxlon=" + maxlon + "&minlat=" + minlat + "&maxlat=" + maxlat);
 }
 
 // Request to get Instagram locations (from Facebook places) given certain options.
 function get_fb_places(err, fb_res) {
+    console.log("performing fb queries, etc");
     if(fb_res.paging && fb_res.paging.next) {
         graph.get(fb_res.paging.next, get_fb_places);
     }
 
     var fb_places_remaining = fb_res['data'].length;
     for (var j in fb_res['data']) {
+        var thisPlace = fb_res['data'][j];
 
-        ig.location_search({"facebook_places_id": fb_res['data'][j].id},
+        
+
+        // Search for IG locations based on this FB place.
+        ig.location_search({"facebook_places_id": thisPlace.id},
             function(err, locationsResult, remaining, limit) {
                 if (err) {
                     console.log("ERROR OCCURED: " + JSON.stringify(err));
@@ -70,11 +103,37 @@ function get_fb_places(err, fb_res) {
                 } else {
 
                     for (var i in locationsResult) {
+                        var thisPlace = locationsResult[i];
+
+                        // Set up post request to DB, storing this FB place.
+                        var dbPostJson = {
+                            "longitude": thisPlace.longitude,
+                            "latitude": thisPlace.latitude,
+                            "title": thisPlace.name,
+                            "description": thisPlace.id,
+                            "source": "instagram"
+                        };
+                        var dbPostString = JSON.stringify(dbPostJson); 
+
+                        request.post({
+                            uri: "http://128.208.1.140:3000/gaia",
+                            headers: {'content-type': 'application/json'},
+                            body: dbPostString
+                        }, function(err,res,body){
+                            if (err) {
+                                console.log(err);
+                            } else {
+                                // console.log(body);
+                                // console.log(res.statusCode);
+                            }
+                        });
+
+
                         var location = {};
-                        location.ig_place_id = locationsResult[i].id;
-                        location.name = locationsResult[i].name;
-                        location.lat = locationsResult[i].latitude;
-                        location.lng = locationsResult[i].longitude;
+                        location.description = thisPlace.id;
+                        location.title = thisPlace.name;
+                        location.latitude = thisPlace.latitude;
+                        location.longitude = thisPlace.longitude;
                         json_out.push(location);
                         
                     }
