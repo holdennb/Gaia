@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" type="text/css" href="bootstrap/css/bootstrap.css">
+<link rel="stylesheet" type="text/css" href="bootstrap/css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" href="bootstrap/css/bootstrap-responsive.css">
+<link rel="stylesheet" type="text/css" href="bootstrap/css/bootstrap-responsive.min.css">
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+<script src="bootstrap/bootstrap.min.js"></script>
+<script>
+function isNumber(n) {
+  return !isNaN(parseFloat(n)) && isFinite(n);
+}
+
+function checkLatitude(n) {
+	if (!n | !isNumber(n)) {
+		return false;
+	}
+	return n <= 90 && n >= -90; 
+}
+
+function checkLongitude(n) {
+	if (!n | !isNumber(n)) {
+		return false;
+	}
+	return n <= 180 && n >= -180; 
+}
+
+function httpRequestDB()
+{
+	document.getElementById("checkInput").innerHTML = "";
+	var minlat = $('#minlat').val();
+	var maxlat = $('#maxlat').val();
+	var minlon = $('#minlon').val();
+	var maxlon = $('#maxlon').val();
+	var filled = 0;
+
+	if (!checkLatitude(minlat) | !checkLatitude(maxlat) | !checkLongitude(minlon) | !checkLongitude(maxlon))  {
+		document.getElementById("checkInput").innerHTML = "All inputs have to be valid coordinate integers. \n"
+	} else if (maxlon < minlon | maxlat < minlat) {
+		document.getElementById("checkInput").innerHTML = "Input Min is greater than input Max. \n"
+	} else {
+		/* data looks like this:
+		[
+		  {
+		    "_id": "54e3cf317118f0904b5de175",
+		    "longitude": 122.36000061,
+		    "latitude": 47.629165649,
+		    "title": "Kerry Park",
+		    "source": "google",
+		    "description": null,
+		    "imageURL": null,
+		    "text": null,
+		    "premanentLink": null,
+		    "time_created": "2015-02-17T23:30:57.813Z"
+		  }
+		]
+
+		// access json data by: data[0]["_id"]   OR   data[0].longitude
+		*/
+		$.ajax({
+		    url: 'http://128.208.1.140:3000/gaia?minlat='+minlat+'&maxlat='+maxlat+'&minlon='+minlon+'&maxlon='+maxlon,
+		    type: 'GET',
+		    headers: {"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods" : "GET,POST,PUT,DELETE,OPTIONS", "Access-Control-Allow-Headers": "Content-Type, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Authorization, X-Requested-With"} ,
+		    crossDomain: true,
+		    dataType: 'json',
+		    success: function(data) {  document.getElementById("myDiv").innerHTML="success " +  " " + data[0]["_id"] + data[0].longitude;},
+		    error: function(data) { document.getElementById("myDiv").innerHTML="error" + data;}
+		});
+	}
+	
+}
+</script>
+</head>
+<body>
+
+<h2>Query with filter</h2>
+<div class="row">
+	<div class="col-xs-12 col-sm-6 col-md-8">
+		<div class="input-group">
+		   <input type="text" class="form-control" id="minlat" placeholder="Min Latitude">
+		   <input type="text" class="form-control" id="maxlat" placeholder="Max Latitude">
+		   <input type="text" class="form-control" id="minlon" placeholder="Min Longitude">
+		   <input type="text" class="form-control" id="maxlon" placeholder="Max Longitude">
+		</div>
+	</div>
+	<div class="col-xs-6 col-md-4">
+		<span class="input-group-btn">
+		    <button class="btn btn-default" type="button" onclick="httpRequestDB()">Go!</button>
+		</span>
+	</div>
+</div>
+
+<div id="myDiv"></div>
+<div id="checkInput"></div>
+
+</body>
+</html>
