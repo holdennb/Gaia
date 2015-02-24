@@ -50,10 +50,10 @@ function get_ig_places(req, result) {
         distance: "3000"
     };
 
-    var minlon = lng - 0.04491555875;   // 5000m
-    var maxlon = lng + 0.04491555875;
-    var minlat = lat - 0.04491555875;
-    var maxlat = lat + 0.04491555875;
+    var minlon = lng - 10 * 0.00898311175;   // 10000m
+    var maxlon = lng + 10 * 0.00898311175;
+    var minlat = lat - 10 * 0.00898311175;
+    var maxlat = lat + 10 * 0.00898311175;
 
 
     request({

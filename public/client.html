@@ -14,12 +14,18 @@
     <p></p>
     </div>
     <div id="current-info">
-        <p>
+        <div>
             Your Current Location:<br />
             Latitude: <span id="current-lat"></span><br />
             Longitude: <span id="current-lng"></span>
-        </p>
-
+        </div>
+        <div>
+            Or use an address:<br />
+            <form id="address-form" action="#">
+                <input type="text" id="address" name="address">
+                <input type="submit" id="address-submit">
+            </form>
+        </div>
     </div>
 
     <p id="http-response"></p>
