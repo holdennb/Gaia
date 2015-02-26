@@ -15,9 +15,14 @@
     </div>
     <div id="current-info">
         <div>
-            Your Current Location:<br />
+            Current Query Location:<br />
             Latitude: <span id="current-lat"></span><br />
-            Longitude: <span id="current-lng"></span>
+            Longitude: <span id="current-lng"></span><br /><br />
+            Category:<br />
+            <form id="category-form" action="#">
+                <input type="text" id="category" name="category" value="coffee">
+                <input type="submit" id="category-submit" value="Refresh">
+            </form>
         </div>
         <div>
             Or use an address:<br />
@@ -34,7 +39,10 @@
 
     <p id="http-response"></p>
 </div>
-<div id="map" style="height: 75%;"></div>
+<div id="map-container">
+    <div id="map"></div>
+    <div id="info"></div>
+</div>
 
 </body>
 </html>

@@ -1,11 +1,14 @@
 body, html {
 	height: 100%;
-	margin-top: 0px;
-	margin-bottom: 0px;
+	margin: 0px;
 }
 
 h1, p {
 	margin: 0px;
+}
+
+#current-info {
+	overflow: hidden;
 }
 
 #current-info div {
@@ -15,10 +18,16 @@ h1, p {
 
 #header {
 	height: 25%;
+	min-height: 150px;
 }
 
-#map {
+#map-container {
 	height: 75%;
+}
+
+#map-container > div {
+	/*float: left;*/
+	height: 100%;
 }
 
 #top-results, #top-three {
