@@ -23,24 +23,48 @@ h1, p {
 
 #map-container {
 	height: 75%;
+	position: relative;
 }
 
 #map-container > div {
-	/*float: left;*/
 	height: 100%;
+	float: left;
 }
 
-#top-results, #top-three {
+#map {
+	width: 100%;
+}
+
+#map.with-info {
+	width: 61%;
+}
+
+#info {
+	display: none;
+	/*position: absolute;*/
+	width: 39%;
+	background-color: #fff;
+	right: .3%;/*
+	top: 1%;*/
+	height: 100%;
+	/*border-radius: 2px;*/
+	overflow: scroll;
+	/*box-shadow: -1px 0px 16px #999;*/
+	/*-moz-box-shadow: -1px 0px 16px #999;*/
+	/*-webkit-box-shadow: -1px 0px 16px #999;*/
+}
+
+#top-results, #top-four {
 	display: none;
 	margin-bottom: 0px;
 }
 
-#top-three li {
+#top-four li {
 	cursor: pointer;
 	text-decoration: underline;
 	margin-top: 4px;
 }
 
-#top-three li.active {
+#top-four li.active {
 	font-weight: bold;
 }

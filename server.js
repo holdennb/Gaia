@@ -64,6 +64,7 @@ function getIGPlaces(req, res) {
     }, function(err, dbResult, body) {
         if (err) {
             console.log("Got error: " + err);
+            graph.search(searchOptions, getIGPlacesFromFBPlaces);
         } else {
             // console.log(dbResult);
             var body = JSON.parse(dbResult.body);
