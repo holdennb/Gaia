@@ -54,6 +54,16 @@ h1, p {
 	/*-webkit-box-shadow: -1px 0px 16px #999;*/
 }
 
+#info .ig-link {
+	float: left;
+	line-height: 0px;
+}
+
+#info .ig-link img {
+	height: 100px;
+	padding: 2px;
+}
+
 #top-results, #top-four {
 	display: none;
 	margin-bottom: 0px;

@@ -111,14 +111,15 @@ function processRequest(lat, lng, category) {
                     if (!marker.info) {
                         // Get posts for this location, display them
                         $.getJSON("http://"  + serverIP + ":" + serverPort
-                                + "/ig_media/" + marker.ig_place_id,
+                                + "/media/" + marker.ig_place_id,
                             function (data) {
                                 marker.info = "<h1>" + marker.title + "</h1>";
                                 $.each(data, function(i, post) {
-                                    marker.info += "<a target='_blank' href='" +
+                                    console.log(post);
+                                    marker.info += "<a class='ig-link' target='_blank' href='" +
                                         post.link + "'><img src='" +
                                         post.images.thumbnail.url + 
-                                        "' /></a><br />";
+                                        "' /></a>";
                                 });
                                 // infowindow.setContent(marker.info);
                                 // infowindow.open(map,marker);

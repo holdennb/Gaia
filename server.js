@@ -25,7 +25,7 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // Handle location request
 app.get("/ig_places/:lat/:lng/:category", getIGPlaces);
-app.get("/ig_media/:ig_place_id", getIGMedia);
+app.get("/media/:location_id", getMedia);
 
 // Route for everything else.
 app.get("*", function(req, res){
@@ -88,24 +88,24 @@ function getIGPlaces(req, res) {
         var fb_places_remaining = fb_res['data'].length;
         var json_out = [];
         for (var j in fb_res['data']) {
-            var thisPlace = fb_res['data'][j];
-
+            var thisFBPlace = fb_res['data'][j];
+            console.log(thisFBPlace);
             // Search for IG locations based on this FB place.
-            ig.location_search({"facebook_places_id": thisPlace.id},
+            ig.location_search({"facebook_places_id": thisFBPlace.id},
                 function(err, locationsResult, remaining, limit) {
                     if (err) {
                         console.log("ERROR OCCURED: " + JSON.stringify(err));
                         res.send(err);
                     } else {
                         for (var i in locationsResult) {
-                            var thisPlace = locationsResult[i];
+                            var thisIGPlace = locationsResult[i];
 
                             // This location, to send to the client & db
                             var location = {
-                                longitude: thisPlace.longitude,
-                                latitude: thisPlace.latitude,
-                                title: thisPlace.name,
-                                source_id: thisPlace.id,
+                                longitude: thisIGPlace.longitude,
+                                latitude: thisIGPlace.latitude,
+                                title: thisIGPlace.name,
+                                source_id: thisIGPlace.id,
                                 source: "instagram",
                                 category: category
                             };
@@ -139,16 +139,12 @@ function getIGPlaces(req, res) {
 
 
 // Request to get Instagram posts given an Instagram location ID.
-function getIGMedia(req, result) {
-    var ig_place_id = req.params.ig_place_id;
+function getMedia(req, result) {
+    var ig_place_id = req.params.location_id;
     // JSON, array of Insta posts
     var json_out = [];
 
-    var options = {
-        "min_timestamp": Date.now() - 1000 * 60 * 60 * 24 * 7,
-        "max_timestamp": Date.now()
-    };
-    ig.location_media_recent(ig_place_id, options,
+    ig.location_media_recent(ig_place_id,
         function(err, ig_media_res, pagination, remaining, limit) {
             if (err) {
                 result.send(err);
