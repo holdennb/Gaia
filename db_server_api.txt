@@ -12,7 +12,7 @@ POST to http://128.208.1.140:3000/gaiadb with JSON:
 [{"coordinates":[40, 30], "title":"home cafe", "category":"food"},{"coordinates":[40, 30], "title":"home cafe", "category":"food”}]
 
 3. Add a media element to that entry:
-PUT to http://128.208.1.140:3000/gaiadb.addMedia?id=<the unique id in the database>&source=<source such as instagram> with JSON:
+PUT to http://128.208.1.140:3000/gaiadb/addMedia?id=<the unique id in the database>&source=<source such as instagram> with JSON:
 {"location_id": 12, 
 "text":"a", 
 "tags": "hashtager", 
