@@ -141,9 +141,11 @@ function getIGPlaces(req, res) {
 // Request to get Instagram posts given an Instagram location ID.
 function getMedia(req, result) {
     var ig_place_id = req.params.location_id;
-    // JSON, array of Insta posts
-    var json_out = [];
+    // JSON, "instagram": [ig media], "yelp": [yelp media], etc.
+    var json_out = {};
+    var num_services = 1;
 
+    json_out.instagram = [];
     ig.location_media_recent(ig_place_id,
         function(err, ig_media_res, pagination, remaining, limit) {
             if (err) {
@@ -152,11 +154,17 @@ function getMedia(req, result) {
                 for (var j in ig_media_res) {
                     var post = ig_media_res[j];
                     post.date = (new Date(ig_media_res[j].created_time * 1000)).toString();
-                    json_out.push(post);
+                    json_out.instagram.push(post);
                 }
-                result.json(json_out);
+                num_services--;
+                if (num_services == 0) {
+                    result.json(json_out);
+                }
             }
         });
+
+    // other services here. make call to find media based on location,
+    //  increment num_services, add posts to json_out.servicename
 
 }
 

@@ -114,21 +114,23 @@ function processRequest(lat, lng, category) {
                                 + "/media/" + marker.ig_place_id,
                             function (data) {
                                 marker.info = "<h1>" + marker.title + "</h1>";
-                                $.each(data, function(i, post) {
-                                    console.log(post);
+
+                                // Here I iterate over data.instagram, the array if IG media
+                                marker.info += "<h3>Instagram posts:</h3>";
+                                $.each(data.instagram, function(i, post) {
                                     marker.info += "<a class='ig-link' target='_blank' href='" +
                                         post.link + "'><img src='" +
                                         post.images.thumbnail.url + 
                                         "' /></a>";
                                 });
-                                // infowindow.setContent(marker.info);
-                                // infowindow.open(map,marker);
+
+                                // Iterate over other data.servicenames here, in the same form
+
+
                                 updateCenterAndMarker(marker, defaultIcon);
                                 
                             });
                     } else {
-                        // infowindow.setContent(marker.info);
-                        // infowindow.open(map,marker);
                         updateCenterAndMarker(marker, defaultIcon);
                     }
                 });
