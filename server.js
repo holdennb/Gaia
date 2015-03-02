@@ -128,36 +128,42 @@ function getPlaces(req, res) {
                             if (fb_places_remaining <= 0) {
                                 // Append ig_json to json_out
                                 Array.prototype.push.apply(json_out, ig_json);
-
-                                num_services--;
-                                if (num_services == 0) {
-                                    res.json(json_out);
-                                    // Send the found locations to the db
-                                    request.post({
-                                        uri: "http://" + dbIP + ":" + dbPort + "/gaia",
-                                        headers: {'content-type': 'application/json'},
-                                        body: JSON.stringify(json_out)
-                                    }, function(err,res,body){
-                                        if (err) {
-                                            console.log(err);
-                                        }
-                                    });
-                                    return;
-                                }
+                                finishIfAllDone();
                             }
                         }
                     });
             }
         }
         graph.search(searchOptions, getIGPlacesFromFBPlaces);
-        
+
         
         // Insert code to get locations from other services here, in the same form
         //  (but hopefully simpler because of FB/IG thing) as above. Increment num_services
 
+
+
+
+
+
+
+        function finishIfAllDone() {
+            num_services--;
+            if (num_services == 0) {
+                res.json(json_out);
+                // Send the found locations to the db
+                request.post({
+                    uri: "http://" + dbIP + ":" + dbPort + "/gaia",
+                    headers: {'content-type': 'application/json'},
+                    body: JSON.stringify(json_out)
+                }, function(err,res,body){
+                    if (err) {
+                        console.log(err);
+                    }
+                });
+            }
+        }
     }
 }
-
 
 
 // Request to get Instagram posts given an Instagram location ID.
