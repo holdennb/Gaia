@@ -5,6 +5,12 @@ var logger = require("morgan");
 var app = express();
 var ig = require("instagram-node").instagram();
 var graph = require("fbgraph");
+var yelp = require("yelp").createClient({
+    consumer_key: "Py97HAoHM-vRPRNtyHDPdw",
+    consumer_secret: "5Obi26U2Lxp9G-Lntig91RM5g_0",
+    token: "Qm9upheoBhFYxPyCgMKEF8wF2zoj5p4G",
+    token_secret: "DTO2S3wJuD_8HJw8TNa5mWk4a6o"
+});
 
 var dbIP = "128.208.1.140";
 var dbPort = "3000";
@@ -24,7 +30,7 @@ ig.use({ client_id: '3f4a2693d5cc46a4b0686ae1e8df389a',
 app.use(express.static(path.join(__dirname, "public")));
 
 // Handle location request
-app.get("/ig_places/:lat/:lng/:category", getIGPlaces);
+app.get("/places/:lat/:lng/:category", getPlaces);
 app.get("/media/:location_id", getMedia);
 
 // Route for everything else.
@@ -36,20 +42,13 @@ app.get("*", function(req, res){
 app.listen(serverPort);
 console.log("Listening on port " + serverPort);
 
-// Request to get Instagram locations given a latitude and a longitude
-function getIGPlaces(req, res) {
+// Request to get locations given a latitude and a longitude
+function getPlaces(req, res) {
     // Search for media posted in the last 2 days within 5000 meters
     //  of the given location
     var lat = parseFloat(req.params.lat);
     var lng = parseFloat(req.params.lng);
     var category = req.params.category;
-
-    var searchOptions = {
-        q:     category,
-        type:  "place",
-        center: lat + "," + lng,
-        distance: "5000"
-    };
 
     var minlon = lng - 5 * 0.00898311175;   // 5 km
     var maxlon = lng + 5 * 0.00898311175;
@@ -64,75 +63,98 @@ function getIGPlaces(req, res) {
     }, function(err, dbResult, body) {
         if (err) {
             console.log("Got error: " + err);
-            graph.search(searchOptions, getIGPlacesFromFBPlaces);
+            getPlacesFromServices();
+            return;
         } else {
             // console.log(dbResult);
             var body = JSON.parse(dbResult.body);
             if (body.length) {
                 console.log("found data.");
                 res.json(body);
+                return;
             } else {
                 console.log("didn't find data. searching.");
-                graph.search(searchOptions, getIGPlacesFromFBPlaces);
+                getPlacesFromServices();
             }
         }
     });
 
-
-    // Request to get Instagram locations (from Facebook places) given certain options.
-    function getIGPlacesFromFBPlaces(err, fb_res) {
-        if(fb_res.paging && fb_res.paging.next) {
-            graph.get(fb_res.paging.next, getIGPlacesFromFBPlaces);
-        }
-
-        var fb_places_remaining = fb_res['data'].length;
+    function getPlacesFromServices() {
         var json_out = [];
-        for (var j in fb_res['data']) {
-            var thisFBPlace = fb_res['data'][j];
-            console.log(thisFBPlace);
-            // Search for IG locations based on this FB place.
-            ig.location_search({"facebook_places_id": thisFBPlace.id},
-                function(err, locationsResult, remaining, limit) {
-                    if (err) {
-                        console.log("ERROR OCCURED: " + JSON.stringify(err));
-                        res.send(err);
-                    } else {
-                        for (var i in locationsResult) {
-                            var thisIGPlace = locationsResult[i];
+        var num_services = 1;
 
-                            // This location, to send to the client & db
-                            var location = {
-                                longitude: thisIGPlace.longitude,
-                                latitude: thisIGPlace.latitude,
-                                title: thisIGPlace.name,
-                                source_id: thisIGPlace.id,
-                                source: "instagram",
-                                category: category
-                            };
-                            json_out.push(location);
-                        }
+        // Request to get Instagram locations (from Facebook places) given certain options.
+        var searchOptions = {
+            q:     category,
+            type:  "place",
+            center: lat + "," + lng,
+            distance: "5000"
+        };
+        function getIGPlacesFromFBPlaces(err, fb_res) {
+            if(fb_res.paging && fb_res.paging.next) {
+                graph.get(fb_res.paging.next, getIGPlacesFromFBPlaces);
+            }
 
-                        // If this is now 0, we've finished all the requests.
-                        --fb_places_remaining;
-                        if (fb_places_remaining <= 0) {
-                            // Send JSON to client
-                            res.json(json_out);
+            var fb_places_remaining = fb_res['data'].length;
+            var ig_json = [];
+            for (var j in fb_res['data']) {
+                var thisFBPlace = fb_res['data'][j];
+                // console.log(thisFBPlace);
+                // Search for IG locations based on this FB place.
+                ig.location_search({"facebook_places_id": thisFBPlace.id},
+                    function(err, locationsResult, remaining, limit) {
+                        if (err) {
+                            console.log("ERROR OCCURED: " + JSON.stringify(err));
+                            res.send(err);
+                        } else {
+                            for (var i in locationsResult) {
+                                var thisIGPlace = locationsResult[i];
 
-                            // Send the found locations to the db
-                            request.post({
-                                uri: "http://" + dbIP + ":" + dbPort + "/gaia",
-                                headers: {'content-type': 'application/json'},
-                                body: JSON.stringify(json_out)
-                            }, function(err,res,body){
-                                if (err) {
-                                    console.log(err);
+                                // This location, to send to the client & db
+                                var location = {
+                                    // longitude: thisIGPlace.longitude,
+                                    // latitude: thisIGPlace.latitude,
+                                    coordinates: [thisIGPlace.longitude, thisIGPlace.latitude],
+                                    title: thisIGPlace.name,
+                                    source_id: thisIGPlace.id,
+                                    source: "instagram",
+                                    category: category
+                                };
+                                json_out.push(location);
+                            }
+
+                            // If this is now 0, we've finished all the requests.
+                            --fb_places_remaining;
+                            if (fb_places_remaining <= 0) {
+                                // Append ig_json to json_out
+                                Array.prototype.push.apply(json_out, ig_json);
+
+                                num_services--;
+                                if (num_services == 0) {
+                                    res.json(json_out);
+                                    // Send the found locations to the db
+                                    request.post({
+                                        uri: "http://" + dbIP + ":" + dbPort + "/gaia",
+                                        headers: {'content-type': 'application/json'},
+                                        body: JSON.stringify(json_out)
+                                    }, function(err,res,body){
+                                        if (err) {
+                                            console.log(err);
+                                        }
+                                    });
+                                    return;
                                 }
-                            });
-                            return;
+                            }
                         }
-                    }
-                });
-         }
+                    });
+            }
+        }
+        graph.search(searchOptions, getIGPlacesFromFBPlaces);
+        
+        
+        // Insert code to get locations from other services here, in the same form
+        //  (but hopefully simpler because of FB/IG thing) as above. Increment num_services
+
     }
 }
 
@@ -165,6 +187,7 @@ function getMedia(req, result) {
 
     // other services here. make call to find media based on location,
     //  increment num_services, add posts to json_out.servicename
+
 
 }
 

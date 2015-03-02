@@ -89,7 +89,7 @@ function processRequest(lat, lng, category) {
 
     // Query server to get JSON for locations
     $.getJSON("http://"  + serverIP + ":" + serverPort
-            + "/ig_places/" + lat + "/" + lng + "/" + category,
+            + "/places/" + lat + "/" + lng + "/" + category,
         function (data) {
             // Clear old markers
             clearMarkers();
@@ -97,7 +97,7 @@ function processRequest(lat, lng, category) {
             // Iterate through locations, mapping each
             $.each(data, function(i, place) {
                 var marker = new google.maps.Marker({
-                    position: new google.maps.LatLng(place.latitude, place.longitude),
+                    position: new google.maps.LatLng(place.coordinates[1], place.coordinates[0]),
                     map: map,
                     title: place.title,
                     ig_place_id: place.source_id
