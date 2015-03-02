@@ -44,6 +44,10 @@ console.log("Listening on port " + serverPort);
 
 // Request to get locations given a latitude and a longitude
 function getPlaces(req, res) {
+    console.log(req.url);
+
+
+
     // Search for media posted in the last 2 days within 5000 meters
     //  of the given location
     var lat = parseFloat(req.params.lat);
@@ -128,7 +132,7 @@ function getPlaces(req, res) {
                             if (fb_places_remaining <= 0) {
                                 // Append ig_json to json_out
                                 Array.prototype.push.apply(json_out, ig_json);
-                                finishIfAllDone();
+                                finishIfAllDone(num_services, res, json_out, json_out);
                             }
                         }
                     });
@@ -146,15 +150,21 @@ function getPlaces(req, res) {
 
 
 
-        function finishIfAllDone() {
+        
+    }
+}
+
+// Takes in # of services, response object, client_out, and db_out 
+function finishIfAllDone(num_services, res, client_out, db_out) {
             num_services--;
             if (num_services == 0) {
-                res.json(json_out);
+                res.json(client_out);
+
                 // Send the found locations to the db
                 request.post({
                     uri: "http://" + dbIP + ":" + dbPort + "/gaia",
                     headers: {'content-type': 'application/json'},
-                    body: JSON.stringify(json_out)
+                    body: JSON.stringify(db_out)
                 }, function(err,res,body){
                     if (err) {
                         console.log(err);
@@ -162,39 +172,65 @@ function getPlaces(req, res) {
                 });
             }
         }
-    }
-}
 
 
 // Request to get Instagram posts given an Instagram location ID.
 function getMedia(req, result) {
-    var ig_place_id = req.params.location_id;
     // JSON, "instagram": [ig media], "yelp": [yelp media], etc.
     var json_out = {};
     var num_services = 1;
+    var location_id = req.params.location_id;
 
-    json_out.instagram = [];
-    ig.location_media_recent(ig_place_id,
-        function(err, ig_media_res, pagination, remaining, limit) {
-            if (err) {
-                result.send(err);
+    // Check DB for media for this location. populate source_ids.
+    //  if there is no media, or if it was last updated more than a month or so ago,
+    //  getMediaFromServices.
+    request({
+        url: "http://" + dbIP + ":" + dbPort + "/gaia?location_id=" + location_id,
+    }, function(err, dbResult, body) {
+        // if (err) {
+        if (true) { // until db is fully implemented
+            console.log("Got error: " + err);
+            getMediaFromServices();
+            return;
+        } else {
+            // console.log(dbResult);
+            var location = JSON.parse(dbResult);
+            // If there's media and it's been updated within the last 30 days, use it!
+            if (location.media.length
+                && (Date.now() - new Date(location.time_modified)) < 1000*60*60*24*30) {
+                console.log("found data.");
+                res.json(body);
+                return;
             } else {
-                for (var j in ig_media_res) {
-                    var post = ig_media_res[j];
-                    post.date = (new Date(ig_media_res[j].created_time * 1000)).toString();
-                    json_out.instagram.push(post);
-                }
-                num_services--;
-                if (num_services == 0) {
-                    result.json(json_out);
-                }
+                console.log("didn't find data. searching.");
+                getMediaFromServices();
             }
-        });
+        }
+    });
 
-    // other services here. make call to find media based on location,
-    //  increment num_services, add posts to json_out.servicename
+    function getMediaFromServices() {
+        var ig_place_id = req.params.location_id;   // ig_place_id should be populated by DB req.
+        var db_out = [];
+        json_out.instagram = [];
+        ig.location_media_recent(ig_place_id,
+            function(err, ig_media_res, pagination, remaining, limit) {
+                if (err) {
+                    result.send(err);
+                } else {
+                    for (var j in ig_media_res) {
+                        var post = ig_media_res[j];
+                        post.date = (new Date(ig_media_res[j].created_time * 1000)).toString();
+                        json_out.instagram.push(post);
+                    }
+                    finishIfAllDone(num_services, result, json_out, db_out);
+                }
+            });
+
+        // other services here. make call to find media based on location,
+        //  increment num_services, add posts to json_out.servicename
 
 
+    }
 }
 
 
