@@ -7,17 +7,38 @@ POST to http://128.208.1.140:3000/gaiadb with JSON
 ***** note that the JSON looks something like this: (All fields below are required) *****
  {coordinates : [ <longitude> , <latitude> ], title: <place name>, category: <place types> }
 
+1.5. Insert one item and add media element
+POST to http://128.208.1.140:3000/gaiadb?source=<source>&location_id=<id> with JSON 
+{"coordinates":[40, 30], "title":"home cafe", "category":"food"}
+
 2. Insert an array of JSON item:
 POST to http://128.208.1.140:3000/gaiadb with JSON: 
 [{"coordinates":[40, 30], "title":"home cafe", "category":"food"},{"coordinates":[40, 30], "title":"home cafe", "category":"food”}]
 
 3. Add a media element to that entry:
-PUT to http://128.208.1.140:3000/gaiadb.addMedia?id=<the unique id in the database>&source=<source such as instagram> with JSON:
+PUT to http://128.208.1.140:3000/gaiadb/addMedia?id=<the unique id in the database>&source=<source such as instagram> with JSON:
 {"location_id": 12, 
+"post_id" 1,
 "text":"a", 
 "tags": "hashtager", 
 "image_url": "a.com",
 "link" : "a.com",
-"rating": 5
+"rating": 5}
 ****** only location_id is required. ******
+
+
+
+
+
+
+
+
+
+
+
+
+//******************************************************************************************//
+Test API calls for Jacqueline:
+curl -H "Content-Type: application/json" -X PUT -d '{"post_id" 1,"location_id": "12", "tags": "hashtager", "rating": 5}' http://127.0.0.1:3001/itemstest/addMedia?id=54f3885a8a9d224c04005448&source=instagram
+
 
