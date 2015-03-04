@@ -1,30 +1,48 @@
-DB server APIs:
+DB server API reference:
 
-1. Insert one item:
-POST to http://128.208.1.140:3000/gaiadb with JSON 
-{"coordinates":[40, 30], "title":"home cafe", "category":"food"}
+INSERT/ADD to the DB 
+	1. Insert one item
+		POST to http://128.208.1.140:3000/gaiadb with JSON 
+		{"longitude": -122.3179672, "latitude": 47.6549871, "title":"home cafe", "category":"food"}
 
-***** note that the JSON looks something like this: (All fields below are required) *****
- {coordinates : [ <longitude> , <latitude> ], title: <place name>, category: <place types> }
+		***** note that the JSON looks something like this: (All fields below are required) *****
+		 {longitude : <longitude> , latitude: <latitude> , title: <place name>, category: <place types> }
 
-1.5. Insert one item and add media element
-POST to http://128.208.1.140:3000/gaiadb?source=<source>&location_id=<id> with JSON 
-{"coordinates":[40, 30], "title":"home cafe", "category":"food"}
+	2. Insert one item and add media element
+		POST to http://128.208.1.140:3000/gaiadb with JSON 
+		{"longitude": -122.3179672, "latitude": 47.6549871, "title":"home cafe", "category":"food", "source":"instagram", "location_id": 1231}
 
-2. Insert an array of JSON item:
-POST to http://128.208.1.140:3000/gaiadb with JSON: 
-[{"coordinates":[40, 30], "title":"home cafe", "category":"food"},{"coordinates":[40, 30], "title":"home cafe", "category":"food”}]
+	3. Insert an array of JSON items
+		POST to http://128.208.1.140:3000/gaiadb with JSON: 
+		[{"coordinates":[40, 30], "title":"home cafe", "category":"food"},{"coordinates":[40, 30], "title":"home cafe", "category":"food”}]
 
-3. Add a media element to that entry:
-PUT to http://128.208.1.140:3000/gaiadb/addMedia?id=<the unique id in the database>&source=<source such as instagram> with JSON:
-{"location_id": 12, 
-"post_id" 1,
-"text":"a", 
-"tags": "hashtager", 
-"image_url": "a.com",
-"link" : "a.com",
-"rating": 5}
-****** only location_id is required. ******
+	4. Add a media element to that item:
+		PUT to http://128.208.1.140:3000/gaiadb/addMedia?id=<the unique id in the database>&source=<source such as instagram> with JSON:
+		{"location_id": 12, 
+		"post_id" 1,
+		"text":"a", 
+		"tags": "hashtager", 
+		"image_url": "a.com",
+		"link" : "a.com",
+		"rating": 5}
+		****** only location_id is required. ******
+
+	5. Add an array of media elements to that item
+		PUT to http://128.208.1.140:3000/gaiadb/addMedia?id=<unique id in the db>&source=<media source such as facebook>
+		with JSON:
+		[	{"post_id" : 1, "location_id": 11011, "tags": "hashtager", "rating": 5},
+			{"post_id" : 1, "location_id": 11211, "tags": "hashtager", "rating": 5}		]
+
+QUERY from the DB
+	1. Given a minlat, maxlat, minlon, maxlon
+		GET to
+		http://128.208.1.140:3000/gaiadb/filter/box?minlat=<minlat>&maxlat=<maxlat>&minlon=<minlon>&maxlon=<maxlon>
+
+	2. Get all
+		GET to 
+		http://128.208.1.140:3000/gaiadb?format=json
+		OR
+		http://128.208.1.140:3000/gaiadb?format=table
 
 
 
@@ -35,10 +53,69 @@ PUT to http://128.208.1.140:3000/gaiadb/addMedia?id=<the unique id in the databa
 
 
 
+
+
+
+
+
+
+
+
+
+
+//******************************   Jacqueline's notes  *************************************//
+//******************************************************************************************//
+//******************************************************************************************//
+//******************************************************************************************//
+
+Test API calls for Jacqueline: ** remember to put '' around the URL
+POST 
+curl -H "Content-Type: application/json" -X POST -d '{"coordinates":[40, 30], "title":"home cafe", "category":"food", "source":"instagram", "location_id": 1231}' http://127.0.0.1:3001/itemstest
+
+curl -H "Content-Type: application/json" -X POST -d '[{"coordinates":[40, 30], "title":"home cafe", "category":"food", "source":"instagram", "location_id": 1231},{"coordinates":[40, 30], "title":"home cafe", "category":"food", "source":"instagram", "location_id": 1231}]' http://127.0.0.1:3001/itemstest
+
+
+PUT
+
+ADD MEDIA
+curl -H "Content-Type: application/json" -X PUT -d '{"post_id" : 1, "location_id": 100000000111, "tags": "hashtager", "rating": 5}' 'http://127.0.0.1:3001/itemstest/addMedia?id=54f3f5a06e0280a90329b260&source=facebook'
+
+ADD MEDIA ARRAY
+curl -H "Content-Type: application/json" -X PUT -d '[{"post_id" : 1, "location_id": 11011, "tags": "hashtager", "rating": 5},{"post_id" : 1, "location_id": 11211, "tags": "hashtager", "rating": 5}]' 'http://127.0.0.1:3001/itemstest/addMedia?id=54f3f5a06e0280a90329b260&source=facebook'
+
+GET items
+curl 'http://127.0.0.1:3001/itemstest/filter?minlat=0&maxlat=200&minlon=0&maxlon=200'
 
 
 //******************************************************************************************//
-Test API calls for Jacqueline:
-curl -H "Content-Type: application/json" -X PUT -d '{"post_id" 1,"location_id": "12", "tags": "hashtager", "rating": 5}' http://127.0.0.1:3001/itemstest/addMedia?id=54f3885a8a9d224c04005448&source=instagram
+Test API calls for Jacqueline: ** remember to put '' around the URL for collection test
+POST 
+curl -H "Content-Type: application/json" -X POST -d '{"longitude": -122.3179672, "latitude": 47.6549871, "title":"home cafe", "category":"food", "source":"instagram", "location_id": 1231}' http://127.0.0.1:3001/test
 
 
+Try search between:
+for this place: 47.6549871,-122.3179672
+47.65,-122.31
+47.66,-122.32
+
+
+curl "http://127.0.0.1:3001/test/add2dsphereIndex"
+
+// should return something
+curl "http://127.0.0.1:3001/test/filter/box?minlat=47.65&maxlat=47.66&minlon=-122.32&maxlon=-122.31"
+
+// should not return anything
+curl "http://127.0.0.1:3001/test/filter/box?minlat=46.65&maxlat=46.66&minlon=-122.32&maxlon=-122.31"
+
+// not working....
+curl "http://127.0.0.1:3001/test/filter/circle?center_lon=-122.32&center_lat=47.66&min_dist=0&max_dist=700"
+
+
+Try search this in circle:
+center: 47.66,-122.32
+radius: 600m 
+
+REMOVE
+curl "http://127.0.0.1:3001/test/removeCollection"
+
+curl "http://128.208.1.140:3000/gaia/removeCollection"
