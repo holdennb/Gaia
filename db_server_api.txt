@@ -34,10 +34,12 @@ INSERT/ADD to the DB
 			{"post_id" : 1, "location_id": 11211, "tags": "hashtager", "rating": 5}		]
 
 QUERY from the DB
-	1. Given a minlat, maxlat, minlon, maxlon
+	1. Given a minlat, maxlat, minlon, maxlon, (optional: category)
 		GET to
 		http://128.208.1.140:3000/gaiadb/filter/box?minlat=<minlat>&maxlat=<maxlat>&minlon=<minlon>&maxlon=<maxlon>
-
+		OR
+		http://128.208.1.140:3000/gaiadb/filter/box?minlat=<minlat>&maxlat=<maxlat>&minlon=<minlon>&maxlon=<maxlon>&category=<category>
+		
 	2. Get all
 		GET to 
 		http://128.208.1.140:3000/gaiadb?format=json
@@ -70,7 +72,7 @@ QUERY from the DB
 
 Test API calls for Jacqueline: ** remember to put '' around the URL
 POST 
-curl -H "Content-Type: application/json" -X POST -d '{"coordinates":[40, 30], "title":"home cafe", "category":"food", "source":"instagram", "location_id": 1231}' http://127.0.0.1:3001/itemstest
+curl -H "Content-Type: application/json" -X POST -d '{"latitude":40, "longitude":30, "title":"home cafe", "category":"food", "source":"instagram", "location_id": 1231}' http://127.0.0.1:3001/itemstest
 
 curl -H "Content-Type: application/json" -X POST -d '[{"coordinates":[40, 30], "title":"home cafe", "category":"food", "source":"instagram", "location_id": 1231},{"coordinates":[40, 30], "title":"home cafe", "category":"food", "source":"instagram", "location_id": 1231}]' http://127.0.0.1:3001/itemstest
 
