@@ -18,6 +18,12 @@ var serverPort = "3000";
 
 // Log the requests
 app.use(logger("dev"));
+app.use(function(req, res, next) {
+    res.header('Access-Control-Allow-Origin', "*");
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+    next();
+});
 
 // FB credentials
 graph.setAccessToken('1584238351793353|d-YwDPT2Tueuy9zXp1YiCZSSB9k');
@@ -56,7 +62,7 @@ function getPlaces(req, res) {
 
     var minlon = lng - 5 * 0.00898311175;   // 5 km
     var maxlon = lng + 5 * 0.00898311175;
-    var minlat = lat - 5 * 0.00898311175;
+    var minlat = lat - 5 * 0.00898311175;   // .00004 = about 5 m
     var maxlat = lat + 5 * 0.00898311175;
 
     // Query for locations within this range already in the db.
@@ -70,23 +76,23 @@ function getPlaces(req, res) {
             getPlacesFromServices();
             return;
         } else {
-            console.log(dbResult);
+            // console.log(dbResult);
             var body = JSON.parse(dbResult.body);
-            if (body.length) {
-                console.log("found data.");
-                res.json(body);
-                return;
-            } else {
+            // if (body.length) {
+            //     console.log("found data.");
+            //     res.json(body);
+            //     return;
+            // } else {
                 console.log("didn't find data. searching.");
                 getPlacesFromServices();
-            }
+            // }
         }
     });
 
     function getPlacesFromServices() {
         // console.log("NEW REQUEST -------");
         var json_out = [];
-        var num_services = 1;
+        var num_services = 2;
 
         // Request to get Instagram locations (from Facebook places) given certain options.
         var searchOptions = {
@@ -104,7 +110,7 @@ function getPlaces(req, res) {
             var ig_json = [];
             if (!fb_res['data'].length && !fb_res['paging']) {
                 // console.log(fb_res);
-                finishIfAllDoneLoc(num_services, res, []);
+                num_services = finishIfAllDoneLoc(num_services, res, []);
             } else {
                 for (var j in fb_res['data']) {
                     // console.log("in fbdata loop");
@@ -139,7 +145,7 @@ function getPlaces(req, res) {
                                     // console.log(num_services);
                                     // Append ig_json to json_out
                                     Array.prototype.push.apply(json_out, ig_json);
-                                    finishIfAllDoneLoc(num_services, res, json_out);
+                                    num_services = finishIfAllDoneLoc(num_services, res, json_out);
                                 }
                             }
                         });
@@ -151,7 +157,7 @@ function getPlaces(req, res) {
         
         // Insert code to get locations from other services here, in the same form
         //  (but hopefully simpler because of FB/IG thing) as above. Increment num_services
-/*
+
         yelp.search({term: category, ll: lat + "," + lng}, function(error, data) {
             if (error) {
                 console.log(error);
@@ -161,43 +167,45 @@ function getPlaces(req, res) {
 
             for (var i in data.businesses) {
                 var thisPlace = data.businesses[i];
-
+                // console.log(thisPlace.location);
                 var address = thisPlace.location.address[0] + " "
                      + thisPlace.location.city + " " + thisPlace.location.country_code;
 
-                // yelp doesn't give lat & lng, so have to query for it...ugh
+                // yelp doesn't give lat & lng, so have to query for it...ugh....wait jk
                 // console.log(address);
-                request({
-                    url: "http://maps.googleapis.com/maps/api/geocode/json?address="
-                    + address,
-                }, function(err, data, body) {
-                    console.log(body);
-                    if (err) {
-                        console.log(err);
-                    } else if (body.results && body.results.length) {
-                        console.log(body.results[0].geometry.location.lat + "," + body.results[0].geometry.location.lng);
+                // request({
+                //     url: "http://maps.googleapis.com/maps/api/geocode/json?address="
+                //     + address,
+                // }, function(err, data, body) {
+                //     // console.log(body);
+                //     if (err) {
+                //         console.log(err);
+                //     } else if (body.results && body.results.length) {
+                        // console.log(body.results[0].geometry.location.lat + "," + body.results[0].geometry.location.lng);
                         // This location, to send to the client & db
-                        var location = {
-                            coordinates: [body.results[0].geometry.location.lng,
-                                body.results[0].geometry.location.lat],
-                            title: thisPlace.name,
-                            location_id: thisPlace.id,
-                            source: "yelp",
-                            // category: category
-                        };
-                        json_out.push(location);
-                    }
-                    // If this is now 0, we've finished all the requests.
-                    --yelp_remaining;
-                    if (yelp_remaining <= 0) {
-                        // Append ig_json to json_out
-                        finishIfAllDoneLoc(num_services, res, json_out);
-                    }
-                });       
+                var location = {
+                    // coordinates: [body.results[0].geometry.location.lng,
+                    //     body.results[0].geometry.location.lat],
+                    longitude: thisPlace.location.coordinate.longitude,
+                    latitude: thisPlace.location.coordinate.latitude,
+                    title: thisPlace.name,
+                    location_id: thisPlace.id,
+                    source: "yelp",
+                    category: category,
 
+                };
+                // console.log(location);
+                json_out.push(location);
+                // If this is now 0, we've finished all the requests.
+                --yelp_remaining;
+                if (yelp_remaining <= 0) {
+
+                    num_services = finishIfAllDoneLoc(num_services, res, json_out);
+                }
+                // });       
             }
         });
-*/
+
 
 
 
@@ -212,18 +220,18 @@ function finishIfAllDoneLoc(num_services, res, json_out) {
     if (num_services == 0) {
         // res.json(json_out);
 
-        // console.log("posting data: " + JSON.stringify(db_out));
+        // console.log("posting data: " + JSON.stringify(json_out));
 
         // Send the found locations to the db
         request.post({
             uri: "http://" + dbIP + ":" + dbPort + "/gaiadb",
             headers: {'content-type': 'application/json'},
-            body: JSON.stringify(db_out)
+            body: JSON.stringify(json_out)
         }, function(err, result, body){
-            // console.log(body);
+            console.log(body);
             var body_json = JSON.parse(body);
             // console.log("body.length: " + body_json.length);
-            // console.log("db_out.length: " + db_out.length);
+            // console.log(".length: " + .length);
             // console.log("json_out.length: " + json_out.length);
             if (err) {
                 console.log(err);
@@ -236,10 +244,11 @@ function finishIfAllDoneLoc(num_services, res, json_out) {
             }
         });
     }
+    return num_services;
 }
 
-// Takes in # of services, response object, client_out, and db_out 
-function finishIfAllDoneMed(num_services, res, client_out, db_out, gaia_id) {
+// Takes in # of services, response object, client_out, and  
+function finishIfAllDoneMed(num_services, res, client_out, gaia_id) {
     num_services--;
     if (num_services == 0) {
         res.json(client_out);
@@ -254,26 +263,17 @@ function finishIfAllDoneMed(num_services, res, client_out, db_out, gaia_id) {
                     body: JSON.stringify(client_out[source])
                 }, function(err, result, body){
                     // console.log(body);
-                    // var body_json = JSON.parse(body);
-                    // console.log("body.length: " + body_json.length);
-                    // console.log("db_out.length: " + db_out.length);
-                    // console.log("client_out.length: " + client_out.length);
+
                     if (err) {
                         console.log(err);
                     } else {
                         // console.log(body);
                     }
-                    //else if (!body_json.error) {
-                    //     console.log("sending body_json");
-                    //     res.json(body_json);
-                    // } else {
-                    //     console.log("sending empty");
-                    //     res.json([]);
-                    // }
                 });
             }
         }
     }
+    return num_services;
 }
 
 
@@ -281,8 +281,7 @@ function finishIfAllDoneMed(num_services, res, client_out, db_out, gaia_id) {
 function getMedia(req, result) {
     // JSON, "instagram": [ig media], "yelp": [yelp media], etc.
     var json_out = {};
-    var db_out = [];
-    var num_services = 1;
+    var num_services = 2;
     var gaia_id = req.params.gaia_id;
     console.log("getting media from services");
 
@@ -311,16 +310,46 @@ function getMedia(req, result) {
                         
                         json_out.instagram.push(post);
                     }
-                    finishIfAllDoneMed(num_services, result, json_out, db_out, gaia_id);
+                    num_services = finishIfAllDoneMed(num_services, result, json_out, gaia_id);
                 }
             });
     } else {
-        finishIfAllDoneMed(num_services, result, json_out, db_out, gaia_id);
+        num_services = finishIfAllDoneMed(num_services, result, json_out, gaia_id);
     }
 
     // other services here. make call to find media based on location,
     //  increment num_services, add posts to json_out.servicename
 
+
+    if (req.query.yelp && req.query.yelp.length) {
+        var yelp_id = req.query.yelp[0].location_id;
+        json_out.yelp = [];
+        yelp.business(yelp_id,
+            function(err, data) {
+                if (err) {
+                    result.send(err);
+                } else {
+                    // for (var j in ig_media_res) {
+                        // var thisRes = ig_media_res[j];
+
+                        // var post = {
+                        //     location_id: thisRes.location.id,
+                        //     post_id: thisRes.id,
+                        //     text: (thisRes.caption ? thisRes.caption.text : ""),
+                        //     image_url: thisRes.images.standard_resolution.url,
+                        //     link: thisRes.link,
+                        //     rating: thisRes.likes.count,
+                        //     date: (new Date(thisRes.created_time * 1000)).toString()
+                        // };
+                        
+                    json_out.yelp.push(data);
+                    // }
+                    num_services = finishIfAllDoneMed(num_services, result, json_out, gaia_id);
+                }
+            });
+    } else {
+        num_services = finishIfAllDoneMed(num_services, result, json_out, gaia_id);
+    }
 
 }
 

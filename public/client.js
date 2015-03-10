@@ -146,14 +146,21 @@ function processRequest(lat, lng, category) {
                                 console.log(data);
                                 marker.info = "<h1>" + marker.title + "</h1>";
 
+                                // Here I iterate over data.yelp, the array yelp data
+                                if (data.yelp && data.yelp.length) {
+                                    marker.info = formatYelp(marker.info, data.yelp[0]);
+                                }
+
                                 // Here I iterate over data.instagram, the array if IG media
-                                marker.info += "<h3>Instagram posts:</h3>";
-                                $.each(data.instagram, function(i, post) {
-                                    marker.info += "<a class='ig-link' target='_blank' href='" +
-                                        post.link + "'><img src='" +
-                                        post.image_url + 
-                                        "' /></a>";
-                                });
+                                if (data.instagram) {
+                                    marker.info += "<h3>Instagram posts:</h3>";
+                                    $.each(data.instagram, function(i, post) {
+                                        marker.info += "<a class='ig-link' target='_blank' href='" +
+                                            post.link + "'><img src='" +
+                                            post.image_url + 
+                                            "' /></a>";
+                                    });
+                                }
 
                                 // Iterate over other data.servicenames here, in the same form
 
@@ -166,17 +173,35 @@ function processRequest(lat, lng, category) {
                         // marker hasn't been clicked, but has good media
                         marker.info = "<h1>" + marker.title + "</h1>";
 
-                        // Here I iterate over data.instagram, the array if IG media
-                        marker.info += "<h3>Instagram posts:</h3>";
-                        $.each(marker.media.instagram, function(i, post) {
-                            if (post.image_url) {
-                                marker.info += "<a class='ig-link' target='_blank' href='" +
-                                    post.link + "'><img src='" +
-                                    post.image_url + 
-                                    "' /></a>";
-                            }
-                        });
+                        // Here I iterate over data.yelp, the array yelp data
+                        if (marker.media.yelp) {
+                            marker.info += "<h3>Yelp review:</h3>";
 
+                            console.log(marker.media.yelp);
+
+                            $.each(marker.media.yelp, function(i, business) {
+                                if (business.image_url) {
+                                    marker.info += "<a class='yelp-link' target='_blank' href='" +
+                                        business.url + "'><img src='" +
+                                        business.image_url + 
+                                        "' /></a>";
+                                }
+                            });
+                        }
+                        console.log("past yelp");
+                        // Here I iterate over data.instagram, the array of IG media
+                        if (marker.media.instagram) {
+                            marker.info += "<h3>Instagram posts:</h3>";
+                            $.each(marker.media.instagram, function(i, post) {
+                                if (post.image_url) {
+                                    marker.info += "<a class='ig-link' target='_blank' href='" +
+                                        post.link + "'><img src='" +
+                                        post.image_url + 
+                                        "' /></a>";
+                                }
+                            });
+                        }
+                        console.log("past IG");
                         // Iterate over other data.servicenames here, in the same form
 
 
@@ -189,6 +214,33 @@ function processRequest(lat, lng, category) {
                 });
             });
         });
+}
+
+function formatYelp(output, business) {
+    output += "<h3>Yelp review: ("
+        + business.rating + " stars)</h3>";
+    console.log(business);
+    if (business.image_url) {
+        output += "<a class='yelp-link' target='_blank' href='" +
+            business.url + "'><img src='" +
+            business.image_url + 
+            "' /></a>";
+        $.each(business.reviews, function(i, review) {
+            output += "<p>" + review.excerpt + "</p>";
+        });
+    }
+    return output;
+}
+
+function formatInstagram(output, data) {
+    output += "<h3>Instagram posts:</h3>";
+    $.each(data.instagram, function(i, post) {
+        output += "<a class='ig-link' target='_blank' href='" +
+            post.link + "'><img src='" +
+            post.image_url + 
+            "' /></a>";
+    });
+    return output;
 }
 
 function updateCenterAndMarker(marker, defaultIcon) {
