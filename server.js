@@ -31,7 +31,7 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // Handle location request
 app.get("/places/:lat/:lng/:category", getPlaces);
-app.get("/media/:location_id", getMedia);
+app.get("/media/:gaia_id", getMedia);
 
 // Route for everything else.
 app.get("*", function(req, res){
@@ -44,7 +44,7 @@ console.log("Listening on port " + serverPort);
 
 // Request to get locations given a latitude and a longitude
 function getPlaces(req, res) {
-    console.log(req.url);
+    // console.log(req.url);
 
 
 
@@ -61,16 +61,16 @@ function getPlaces(req, res) {
 
     // Query for locations within this range already in the db.
     request({
-        url: "http://" + dbIP + ":" + dbPort + "/gaia?minlon=" + minlon
-                + "&maxlon=" + maxlon + "&minlat=" + minlat + "&maxlat=" + maxlat,
-        // url: "http://128.208.1.140:3000/gaia?minlon=-123.3193702&maxlon=-121.3193702&minlat=46.6700333&maxlat=48.6700333",
+        url: "http://" + dbIP + ":" + dbPort + "/gaiadb/filter/box?minlon=" + minlon
+                + "&maxlon=" + maxlon + "&minlat=" + minlat + "&maxlat=" + maxlat
+                + "&category=" + category,
     }, function(err, dbResult, body) {
         if (err) {
             console.log("Got error: " + err);
             getPlacesFromServices();
             return;
         } else {
-            // console.log(dbResult);
+            console.log(dbResult);
             var body = JSON.parse(dbResult.body);
             if (body.length) {
                 console.log("found data.");
@@ -84,6 +84,7 @@ function getPlaces(req, res) {
     });
 
     function getPlacesFromServices() {
+        // console.log("NEW REQUEST -------");
         var json_out = [];
         var num_services = 1;
 
@@ -95,47 +96,54 @@ function getPlaces(req, res) {
             distance: "5000"
         };
         function getIGPlacesFromFBPlaces(err, fb_res) {
-            if(fb_res.paging && fb_res.paging.next) {
+            if(fb_res && fb_res.paging && fb_res.paging.next) {
                 graph.get(fb_res.paging.next, getIGPlacesFromFBPlaces);
             }
 
             var fb_places_remaining = fb_res['data'].length;
             var ig_json = [];
-            for (var j in fb_res['data']) {
-                var thisFBPlace = fb_res['data'][j];
-                // console.log(thisFBPlace);
-                // Search for IG locations based on this FB place.
-                ig.location_search({"facebook_places_id": thisFBPlace.id},
-                    function(err, locationsResult, remaining, limit) {
-                        if (err) {
-                            console.log("ERROR OCCURED: " + JSON.stringify(err));
-                            res.send(err);
-                        } else {
-                            for (var i in locationsResult) {
-                                var thisIGPlace = locationsResult[i];
+            if (!fb_res['data'].length && !fb_res['paging']) {
+                // console.log(fb_res);
+                finishIfAllDoneLoc(num_services, res, []);
+            } else {
+                for (var j in fb_res['data']) {
+                    // console.log("in fbdata loop");
+                    var thisFBPlace = fb_res['data'][j];
+                    // console.log(thisFBPlace);
+                    // Search for IG locations based on this FB place.
+                    ig.location_search({"facebook_places_id": thisFBPlace.id},
+                        function(err, locationsResult, remaining, limit) {
+                            if (err) {
+                                console.log("ERROR OCCURED: " + JSON.stringify(err));
+                                res.send(err);
+                            } else {
+                                for (var i in locationsResult) {
+                                    var thisIGPlace = locationsResult[i];
 
-                                // This location, to send to the client & db
-                                var location = {
-                                    // longitude: thisIGPlace.longitude,
-                                    // latitude: thisIGPlace.latitude,
-                                    coordinates: [thisIGPlace.longitude, thisIGPlace.latitude],
-                                    title: thisIGPlace.name,
-                                    source_id: thisIGPlace.id,
-                                    source: "instagram",
-                                    category: category
-                                };
-                                json_out.push(location);
-                            }
+                                    // This location, to send to the client & db
+                                    var location = {
+                                        longitude: thisIGPlace.longitude,
+                                        latitude: thisIGPlace.latitude,
+                                        // coordinates: [thisIGPlace.longitude, thisIGPlace.latitude],
+                                        title: thisIGPlace.name,
+                                        location_id: thisIGPlace.id,
+                                        source: "instagram",
+                                        category: category
+                                    };
+                                    ig_json.push(location);
+                                }
 
-                            // If this is now 0, we've finished all the requests.
-                            --fb_places_remaining;
-                            if (fb_places_remaining <= 0) {
-                                // Append ig_json to json_out
-                                Array.prototype.push.apply(json_out, ig_json);
-                                finishIfAllDone(num_services, res, json_out, json_out);
+                                // If this is now 0, we've finished all the requests.
+                                --fb_places_remaining;
+                                if (fb_places_remaining <= 0) {
+                                    // console.log(num_services);
+                                    // Append ig_json to json_out
+                                    Array.prototype.push.apply(json_out, ig_json);
+                                    finishIfAllDoneLoc(num_services, res, json_out);
+                                }
                             }
-                        }
-                    });
+                        });
+                }
             }
         }
         graph.search(searchOptions, getIGPlacesFromFBPlaces);
@@ -143,9 +151,53 @@ function getPlaces(req, res) {
         
         // Insert code to get locations from other services here, in the same form
         //  (but hopefully simpler because of FB/IG thing) as above. Increment num_services
+/*
+        yelp.search({term: category, ll: lat + "," + lng}, function(error, data) {
+            if (error) {
+                console.log(error);
+                return;
+            }
+            var yelp_remaining = data.businesses.length;
 
+            for (var i in data.businesses) {
+                var thisPlace = data.businesses[i];
 
+                var address = thisPlace.location.address[0] + " "
+                     + thisPlace.location.city + " " + thisPlace.location.country_code;
 
+                // yelp doesn't give lat & lng, so have to query for it...ugh
+                // console.log(address);
+                request({
+                    url: "http://maps.googleapis.com/maps/api/geocode/json?address="
+                    + address,
+                }, function(err, data, body) {
+                    console.log(body);
+                    if (err) {
+                        console.log(err);
+                    } else if (body.results && body.results.length) {
+                        console.log(body.results[0].geometry.location.lat + "," + body.results[0].geometry.location.lng);
+                        // This location, to send to the client & db
+                        var location = {
+                            coordinates: [body.results[0].geometry.location.lng,
+                                body.results[0].geometry.location.lat],
+                            title: thisPlace.name,
+                            location_id: thisPlace.id,
+                            source: "yelp",
+                            // category: category
+                        };
+                        json_out.push(location);
+                    }
+                    // If this is now 0, we've finished all the requests.
+                    --yelp_remaining;
+                    if (yelp_remaining <= 0) {
+                        // Append ig_json to json_out
+                        finishIfAllDoneLoc(num_services, res, json_out);
+                    }
+                });       
+
+            }
+        });
+*/
 
 
 
@@ -154,63 +206,90 @@ function getPlaces(req, res) {
     }
 }
 
-// Takes in # of services, response object, client_out, and db_out 
-function finishIfAllDone(num_services, res, client_out, db_out) {
-            num_services--;
-            if (num_services == 0) {
-                res.json(client_out);
+// Takes in # of services, response object, and json_out
+function finishIfAllDoneLoc(num_services, res, json_out) {
+    num_services--;
+    if (num_services == 0) {
+        // res.json(json_out);
 
-                // Send the found locations to the db
-                request.post({
-                    uri: "http://" + dbIP + ":" + dbPort + "/gaia",
+        // console.log("posting data: " + JSON.stringify(db_out));
+
+        // Send the found locations to the db
+        request.post({
+            uri: "http://" + dbIP + ":" + dbPort + "/gaiadb",
+            headers: {'content-type': 'application/json'},
+            body: JSON.stringify(db_out)
+        }, function(err, result, body){
+            // console.log(body);
+            var body_json = JSON.parse(body);
+            // console.log("body.length: " + body_json.length);
+            // console.log("db_out.length: " + db_out.length);
+            // console.log("json_out.length: " + json_out.length);
+            if (err) {
+                console.log(err);
+            } else if (!body_json.error) {
+                // console.log("sending body_json");
+                res.json(body_json);
+            } else {
+                // console.log("sending empty");
+                res.json([]);
+            }
+        });
+    }
+}
+
+// Takes in # of services, response object, client_out, and db_out 
+function finishIfAllDoneMed(num_services, res, client_out, db_out, gaia_id) {
+    num_services--;
+    if (num_services == 0) {
+        res.json(client_out);
+
+        // Send the found media to the db
+        for (var source in client_out) {
+            if (client_out.hasOwnProperty(source)) {
+                request.put({
+                    uri: "http://" + dbIP + ":" + dbPort + "/gaiadb/addMedia"
+                        + "?id=" + gaia_id + "&source=" + source,
                     headers: {'content-type': 'application/json'},
-                    body: JSON.stringify(db_out)
-                }, function(err,res,body){
+                    body: JSON.stringify(client_out[source])
+                }, function(err, result, body){
+                    // console.log(body);
+                    // var body_json = JSON.parse(body);
+                    // console.log("body.length: " + body_json.length);
+                    // console.log("db_out.length: " + db_out.length);
+                    // console.log("client_out.length: " + client_out.length);
                     if (err) {
                         console.log(err);
+                    } else {
+                        // console.log(body);
                     }
+                    //else if (!body_json.error) {
+                    //     console.log("sending body_json");
+                    //     res.json(body_json);
+                    // } else {
+                    //     console.log("sending empty");
+                    //     res.json([]);
+                    // }
                 });
             }
         }
+    }
+}
 
 
 // Request to get Instagram posts given an Instagram location ID.
 function getMedia(req, result) {
     // JSON, "instagram": [ig media], "yelp": [yelp media], etc.
     var json_out = {};
+    var db_out = [];
     var num_services = 1;
-    var location_id = req.params.location_id;
+    var gaia_id = req.params.gaia_id;
+    console.log("getting media from services");
 
-    // Check DB for media for this location. populate source_ids.
-    //  if there is no media, or if it was last updated more than a month or so ago,
-    //  getMediaFromServices.
-    request({
-        url: "http://" + dbIP + ":" + dbPort + "/gaia?location_id=" + location_id,
-    }, function(err, dbResult, body) {
-        // if (err) {
-        if (true) { // until db is fully implemented
-            console.log("Got error: " + err);
-            getMediaFromServices();
-            return;
-        } else {
-            // console.log(dbResult);
-            var location = JSON.parse(dbResult);
-            // If there's media and it's been updated within the last 30 days, use it!
-            if (location.media.length
-                && (Date.now() - new Date(location.time_modified)) < 1000*60*60*24*30) {
-                console.log("found data.");
-                res.json(body);
-                return;
-            } else {
-                console.log("didn't find data. searching.");
-                getMediaFromServices();
-            }
-        }
-    });
+    // here i need: service ids, gaia id. (so just whole location object?)
 
-    function getMediaFromServices() {
-        var ig_place_id = req.params.location_id;   // ig_place_id should be populated by DB req.
-        var db_out = [];
+    if (req.query.instagram && req.query.instagram.length) {
+        var ig_place_id = req.query.instagram[0].location_id;
         json_out.instagram = [];
         ig.location_media_recent(ig_place_id,
             function(err, ig_media_res, pagination, remaining, limit) {
@@ -218,19 +297,31 @@ function getMedia(req, result) {
                     result.send(err);
                 } else {
                     for (var j in ig_media_res) {
-                        var post = ig_media_res[j];
-                        post.date = (new Date(ig_media_res[j].created_time * 1000)).toString();
+                        var thisRes = ig_media_res[j];
+
+                        var post = {
+                            location_id: thisRes.location.id,
+                            post_id: thisRes.id,
+                            text: (thisRes.caption ? thisRes.caption.text : ""),
+                            image_url: thisRes.images.standard_resolution.url,
+                            link: thisRes.link,
+                            rating: thisRes.likes.count,
+                            date: (new Date(thisRes.created_time * 1000)).toString()
+                        };
+                        
                         json_out.instagram.push(post);
                     }
-                    finishIfAllDone(num_services, result, json_out, db_out);
+                    finishIfAllDoneMed(num_services, result, json_out, db_out, gaia_id);
                 }
             });
-
-        // other services here. make call to find media based on location,
-        //  increment num_services, add posts to json_out.servicename
-
-
+    } else {
+        finishIfAllDoneMed(num_services, result, json_out, db_out, gaia_id);
     }
+
+    // other services here. make call to find media based on location,
+    //  increment num_services, add posts to json_out.servicename
+
+
 }
 
 

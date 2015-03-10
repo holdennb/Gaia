@@ -7,20 +7,27 @@ var serverIP = "127.0.0.1";
 var serverPort = "3000";
 
 $(document).ready(function() {
-    var lat;
-    var lng;
+    var lat = 47.6097;
+    var lng = -122.3331;
     var category = encodeURIComponent($("#category").val());
 
     if (navigator.geolocation) {
+        console.log("nav.geo");
         navigator.geolocation.getCurrentPosition(function(position) {
             // Got current location!
+            console.log("getCurPos callback");
             lat = position.coords.latitude;
             lng = position.coords.longitude;
             processRequest(lat,lng, category)    
+        }, function() {
+            processRequest(lat, lng, category);
         });
     } else {
+        console.log("not nav.geo");
         // Can't get current location :/
         $("#error p").text("Geolocation is not supported by this browser. Please use address.");
+
+        processRequest(lat, lng, category);
     }
 
     // Change of address
@@ -75,6 +82,7 @@ $(document).ready(function() {
 function processRequest(lat, lng, category) {
     $("#current-lat").text(lat);
     $("#current-lng").text(lng);
+    console.log("procReq");
 
     if (!map && !infowindow) {
         // Set up google map
@@ -96,11 +104,23 @@ function processRequest(lat, lng, category) {
             map.setCenter({lat: parseFloat(lat), lng: parseFloat(lng)});
             // Iterate through locations, mapping each
             $.each(data, function(i, place) {
+                // console.log(place.media);
+                var thisLat, thisLng;
+                if (place.latitude) {
+                    thisLng = place.longitude;
+                    thisLat = place.latitude;
+                } else {
+                    thisLng = place.loc.coordinates[0];
+                    thisLat = place.loc.coordinates[1];
+                }
+
+                // console.log("this lat:" + thisLat + " lng:" + thisLng);
                 var marker = new google.maps.Marker({
-                    position: new google.maps.LatLng(place.coordinates[1], place.coordinates[0]),
+                    position: new google.maps.LatLng(parseFloat(thisLat), parseFloat(thisLng)),
                     map: map,
                     title: place.title,
-                    ig_place_id: place.source_id
+                    media: place.media,
+                    gaia_id: place._id
                 });
 
                 markers.push(marker);
@@ -108,11 +128,22 @@ function processRequest(lat, lng, category) {
 
                 // Add click listener to marker
                 google.maps.event.addListener(marker, 'click', function() {
-                    if (!marker.info) {
+                    var emptyOrOldMedia = false;
+                    for (var source in marker.media) {
+                        if (marker.media.hasOwnProperty(source)
+                            && marker.media[source].length <= 1) {
+                            console.log(source);
+                            emptyOrOldMedia = true;
+                        }
+                    }
+                    if (!marker.info && emptyOrOldMedia) {
+                        // marker hasn't been clicked, and has empty/old media
+                        console.log("getting media from service");
                         // Get posts for this location, display them
                         $.getJSON("http://"  + serverIP + ":" + serverPort
-                                + "/media/" + marker.ig_place_id,
+                                + "/media/" + marker.gaia_id, marker.media,
                             function (data) {
+                                console.log(data);
                                 marker.info = "<h1>" + marker.title + "</h1>";
 
                                 // Here I iterate over data.instagram, the array if IG media
@@ -120,7 +151,7 @@ function processRequest(lat, lng, category) {
                                 $.each(data.instagram, function(i, post) {
                                     marker.info += "<a class='ig-link' target='_blank' href='" +
                                         post.link + "'><img src='" +
-                                        post.images.thumbnail.url + 
+                                        post.image_url + 
                                         "' /></a>";
                                 });
 
@@ -130,7 +161,29 @@ function processRequest(lat, lng, category) {
                                 updateCenterAndMarker(marker, defaultIcon);
                                 
                             });
+                    } else if (!marker.info) {
+                        console.log("has good media");
+                        // marker hasn't been clicked, but has good media
+                        marker.info = "<h1>" + marker.title + "</h1>";
+
+                        // Here I iterate over data.instagram, the array if IG media
+                        marker.info += "<h3>Instagram posts:</h3>";
+                        $.each(marker.media.instagram, function(i, post) {
+                            if (post.image_url) {
+                                marker.info += "<a class='ig-link' target='_blank' href='" +
+                                    post.link + "'><img src='" +
+                                    post.image_url + 
+                                    "' /></a>";
+                            }
+                        });
+
+                        // Iterate over other data.servicenames here, in the same form
+
+
+                        updateCenterAndMarker(marker, defaultIcon);
                     } else {
+                        console.log("clicked already");
+                        // marker has been clicked
                         updateCenterAndMarker(marker, defaultIcon);
                     }
                 });
