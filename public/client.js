@@ -148,7 +148,7 @@ function processRequest(lat, lng, category) {
 
                                 // Here I iterate over data.yelp, the array yelp data
                                 if (data.yelp && data.yelp.length) {
-                                    marker.info = formatYelp(marker.info, data.yelp[0]);
+                                    marker.info = formatYelp(marker.info, data.yelp);
                                 }
 
                                 // Here I iterate over data.instagram, the array if IG media
@@ -169,7 +169,8 @@ function processRequest(lat, lng, category) {
 
                         // Here I iterate over data.yelp, the array yelp data
                         if (marker.media.yelp && marker.media.yelp.length) {
-                            marker.info = formatYelp(marker.info, marker.media.yelp[0]);
+                            console.log(marker.media);
+                            marker.info = formatYelp(marker.info, marker.media.yelp);
                         }
 
                         // Here I iterate over data.instagram, the array of IG media
@@ -191,19 +192,21 @@ function processRequest(lat, lng, category) {
         });
 }
 
-function formatYelp(output, business) {
-    output += "<h3>Yelp review: ("
-        + business.rating + " stars)</h3>";
-    console.log(business);
-    if (business.image_url) {
-        output += "<a class='yelp-link' target='_blank' href='" +
-            business.url + "'><img src='" +
-            business.image_url + 
-            "' /></a>";
-        $.each(business.reviews, function(i, review) {
-            output += "<p>" + review.excerpt + "</p>";
-        });
-    }
+function formatYelp(output, data) {
+    $.each(data, function(i, business) {
+        if (business.image_url) {
+            output += "<h3>Yelp review: ("
+                + business.rating + " stars)</h3>";
+
+            output += "<a class='yelp-link' target='_blank' href='" +
+                business.url + "'><img src='" +
+                business.image_url + 
+                "' /></a>";
+            $.each(business.reviews, function(i, review) {
+                output += "<p>" + review.excerpt + "</p>";
+            });
+        }
+    });
     return output;
 }
 
