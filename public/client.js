@@ -153,13 +153,7 @@ function processRequest(lat, lng, category) {
 
                                 // Here I iterate over data.instagram, the array if IG media
                                 if (data.instagram) {
-                                    marker.info += "<h3>Instagram posts:</h3>";
-                                    $.each(data.instagram, function(i, post) {
-                                        marker.info += "<a class='ig-link' target='_blank' href='" +
-                                            post.link + "'><img src='" +
-                                            post.image_url + 
-                                            "' /></a>";
-                                    });
+                                    marker.info = formatInstagram(marker.info, data.instagram);
                                 }
 
                                 // Iterate over other data.servicenames here, in the same form
@@ -174,32 +168,13 @@ function processRequest(lat, lng, category) {
                         marker.info = "<h1>" + marker.title + "</h1>";
 
                         // Here I iterate over data.yelp, the array yelp data
-                        if (marker.media.yelp) {
-                            marker.info += "<h3>Yelp review:</h3>";
-
-                            console.log(marker.media.yelp);
-
-                            $.each(marker.media.yelp, function(i, business) {
-                                if (business.image_url) {
-                                    marker.info += "<a class='yelp-link' target='_blank' href='" +
-                                        business.url + "'><img src='" +
-                                        business.image_url + 
-                                        "' /></a>";
-                                }
-                            });
+                        if (marker.media.yelp && marker.media.yelp.length) {
+                            marker.info = formatYelp(marker.info, marker.media.yelp[0]);
                         }
-                        console.log("past yelp");
+
                         // Here I iterate over data.instagram, the array of IG media
                         if (marker.media.instagram) {
-                            marker.info += "<h3>Instagram posts:</h3>";
-                            $.each(marker.media.instagram, function(i, post) {
-                                if (post.image_url) {
-                                    marker.info += "<a class='ig-link' target='_blank' href='" +
-                                        post.link + "'><img src='" +
-                                        post.image_url + 
-                                        "' /></a>";
-                                }
-                            });
+                            marker.info = formatInstagram(marker.info, marker.media.instagram);
                         }
                         console.log("past IG");
                         // Iterate over other data.servicenames here, in the same form
@@ -234,7 +209,7 @@ function formatYelp(output, business) {
 
 function formatInstagram(output, data) {
     output += "<h3>Instagram posts:</h3>";
-    $.each(data.instagram, function(i, post) {
+    $.each(data, function(i, post) {
         output += "<a class='ig-link' target='_blank' href='" +
             post.link + "'><img src='" +
             post.image_url + 

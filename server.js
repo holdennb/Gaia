@@ -78,14 +78,14 @@ function getPlaces(req, res) {
         } else {
             // console.log(dbResult);
             var body = JSON.parse(dbResult.body);
-            // if (body.length) {
-            //     console.log("found data.");
-            //     res.json(body);
-            //     return;
-            // } else {
+            if (body.length) {
+                console.log("found data.");
+                res.json(body);
+                return;
+            } else {
                 console.log("didn't find data. searching.");
                 getPlacesFromServices();
-            // }
+            }
         }
     });
 
