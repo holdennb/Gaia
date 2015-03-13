@@ -188,7 +188,11 @@ button[type='submit']:hover {
 	/*-moz-box-shadow: -1px 0px 16px #999;*/
 	/*-webkit-box-shadow: -1px 0px 16px #999;*/
 	width: 450px;
-	padding: 9px 12px 0px 12px;
+	padding: 0px 12px 0px 12px;
+}
+
+#info h1 {
+	padding-top: 9px;
 }
 
 #info .ig-link {
