@@ -9,8 +9,72 @@ var serverPort = "3000";
 $(document).ready(function() {
     var lat = 47.6097;
     var lng = -122.3331;
+    var locationString = "Current Location";
     var category = encodeURIComponent($("#category").val());
 
+    loadWithCurrentLocation(lat, lng, category);
+
+
+    $("#search-form").submit(function(event) {
+        event.preventDefault();
+        category = encodeURIComponent($("#category").val());
+        var address = $("#address").val();
+        console.log(category);
+        console.log(address);
+        console.log(lat);
+        console.log(lng);
+
+        if (address.toLowerCase() != locationString) {
+            locationString = address.toLowerCase();
+            if (locationString == "current location") {
+                console.log("it's current location!");
+                loadWithCurrentLocation(lat, lng, category);
+            } else {
+                console.log("new other location");
+                $.getJSON("http://maps.googleapis.com/maps/api/geocode/json?address="
+                    + encodeURIComponent(address),
+                    function(data) {
+                        $("#error p").text("");
+                        if (data.results.length == 1) {
+                            // If just one address result, use it
+                            processRequest(data.results[0].geometry.location.lat,
+                                data.results[0].geometry.location.lng, category);
+                        } else if (data.results.length > 1) {
+                            // Show top 4 address results, make them clickable
+                            $("#top-four").html("");
+                            for (var i = 0; i < Math.min(4, data.results.length); i++) {
+                                var result = data.results[i];
+                                var item = $("<li></li>");
+
+                                item.attr("data-lat", result.geometry.location.lat);
+                                item.attr("data-lng", result.geometry.location.lng);
+                                item.text(result.formatted_address);
+                                item.click(function() {
+                                    $("#results").slideToggle();
+                                    $("#address").val($(this).text());
+                                    locationString = $(this).text().toLowerCase();
+                                    lat = encodeURIComponent($(this).attr("data-lat"));
+                                    lng = encodeURIComponent($(this).attr("data-lng"));
+                                    processRequest(lat, lng, category);
+                                });
+                                $("#top-four").append(item);
+                            }
+                            $("#results").slideToggle();
+                        } else {
+                            // Address not found
+                            $("#error p").text("Address not found.");
+                        }
+                    });
+            }
+        } else {
+            processRequest(lat, lng, category);
+        }
+    });
+
+
+});
+
+function loadWithCurrentLocation(lat, lng, category) {
     if (navigator.geolocation) {
         console.log("nav.geo");
         navigator.geolocation.getCurrentPosition(function(position) {
@@ -29,59 +93,13 @@ $(document).ready(function() {
 
         processRequest(lat, lng, category);
     }
-
-    // Change of address
-    $("#address-form").submit(function(event) {
-        event.preventDefault();
-        $.getJSON("http://maps.googleapis.com/maps/api/geocode/json?address="
-            + encodeURIComponent($("#address").val()),
-            function(data) {
-                $("#top-results, #top-four").hide();
-                $("#error p").text("");
-                if (data.results.length == 1) {
-                    // If just one address result, use it
-                    processRequest(data.results[0].geometry.location.lat,
-                        data.results[0].geometry.location.lng, category);
-                } else if (data.results.length > 1) {
-                    // Show top 4 address results, make them clickable
-                    $("#top-four").html("");
-                    for (var i = 0; i < Math.min(4, data.results.length); i++) {
-                        var result = data.results[i];
-                        var item = $("<li></li>");
-
-                        item.attr("data-lat", result.geometry.location.lat);
-                        item.attr("data-lng", result.geometry.location.lng);
-                        item.text(result.formatted_address);
-                        item.click(function() {
-                            $(this).siblings().removeClass("active");
-                            $(this).addClass("active");
-                            lat = encodeURIComponent($(this).attr("data-lat"));
-                            lng = encodeURIComponent($(this).attr("data-lng"));
-                            processRequest(lat, lng, category);
-                        });
-
-                        $("#top-results, #top-four").show();
-                        $("#top-four").append(item);
-                    }
-                } else {
-                    // Address not found
-                    $("#error p").text("Address not found.");
-                }
-            });
-    });
-
-    // Change of category
-    $("#category-form").submit(function(event) {
-        event.preventDefault();
-        category = encodeURIComponent($("#category").val());
-        processRequest(lat, lng, category);
-    });
-});
+}
 
 // Reload map with current query
 function processRequest(lat, lng, category) {
-    $("#current-lat").text(lat);
-    $("#current-lng").text(lng);
+    console.log(lat);
+    console.log(lng);
+    $("h1#gaia").removeClass("loaded");
     console.log("procReq");
 
     if (!map && !infowindow) {
@@ -101,6 +119,9 @@ function processRequest(lat, lng, category) {
         function (data) {
             // Clear old markers
             clearMarkers();
+            console.log("loaded");
+            $("#map-container").addClass("loaded");
+            // $("#gaia").addClass("loaded");
             map.setCenter({lat: parseFloat(lat), lng: parseFloat(lng)});
             // Iterate through locations, mapping each
             $.each(data, function(i, place) {

@@ -2,42 +2,43 @@
 <html>
 <head>
     <title>Gaia</title>
+    <link href='http://fonts.googleapis.com/css?family=Londrina+Solid|Fugaz+One|Open+Sans' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
     <link rel="stylesheet" type="text/css" href="client.css">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
     <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&amp;signed_in=true"></script>
     <script type="text/javascript" src="client.js"></script>
 </head>
 <body>
 <div id="header">
-    <h1>G A I A</h1>
-    <div id="error">
-    <p></p>
-    </div>
-    <div id="current-info">
-        <div>
-            Current Query Location:<br />
-            Latitude: <span id="current-lat"></span><br />
-            Longitude: <span id="current-lng"></span><br /><br />
-            Category:<br />
-            <form id="category-form" action="#">
-                <input type="text" id="category" name="category" value="coffee">
-                <input type="submit" id="category-submit" value="Refresh">
-            </form>
-        </div>
-        <div>
-            Or use an address:<br />
-            <form id="address-form" action="#">
-                <input type="text" id="address" name="address">
-                <input type="submit" id="address-submit">
-            </form>
-        </div>
-        <div>
-            <span id="top-results">Top results:</span>
-            <ul id="top-four"></ul>
-        </div>
-    </div>
+    <div id="banner">
+        <h1 id="gaia">Gaia</h1>
 
-    <p id="http-response"></p>
+        <form id="search-form" action="#">
+            <span>Find interesting </span>
+            <input type="text" id="category" name="category" value="Coffee"
+                placeholder="coffee, parks, etc"/>
+            <span> near</span>
+            <input type="text" id="address" name="address" value="Current Location"
+                placeholder="Location" />
+            <button type="submit" id="search-submit">
+                <i class="fa fa-search"></i>
+            </button>
+            <div id="results">
+                <span id="top-results">Did you mean:</span>
+                <ul id="top-four"></ul>
+            </div>
+        </div>
+        </form>
+        <div id="error">
+            <p></p>
+        </div>
+    </div>
+</div>
+
 </div>
 <div id="map-container">
     <div id="map"></div>
