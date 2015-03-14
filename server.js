@@ -105,54 +105,55 @@ function getPlaces(req, res) {
             if(fb_res && fb_res.paging && fb_res.paging.next) {
                 graph.get(fb_res.paging.next, getIGPlacesFromFBPlaces);
             }
+            if (fb_res && fb_res['data'] && fb_res['data'].length) {
+                var fb_places_remaining = fb_res['data'].length;
+                var ig_json = [];
+                if (!fb_res['data'].length && !fb_res['paging']) {
+                    // console.log(fb_res);
+                    num_services = finishIfAllDoneLoc(num_services, res, []);
+                } else {
+                    for (var j in fb_res['data']) {
+                        // console.log("in fbdata loop");
+                        var thisFBPlace = fb_res['data'][j];
+                        // console.log(thisFBPlace);
+                        // Search for IG locations based on this FB place.
+                        ig.location_search({"facebook_places_id": thisFBPlace.id},
+                            function(err, locationsResult, remaining, limit) {
+                                if (err) {
+                                    console.log("ERROR OCCURED: " + JSON.stringify(err));
+                                    res.send(err);
+                                } else {
+                                    for (var i in locationsResult) {
+                                        var thisIGPlace = locationsResult[i];
 
-            var fb_places_remaining = fb_res['data'].length;
-            var ig_json = [];
-            if (!fb_res['data'].length && !fb_res['paging']) {
-                // console.log(fb_res);
-                num_services = finishIfAllDoneLoc(num_services, res, []);
-            } else {
-                for (var j in fb_res['data']) {
-                    // console.log("in fbdata loop");
-                    var thisFBPlace = fb_res['data'][j];
-                    // console.log(thisFBPlace);
-                    // Search for IG locations based on this FB place.
-                    ig.location_search({"facebook_places_id": thisFBPlace.id},
-                        function(err, locationsResult, remaining, limit) {
-                            if (err) {
-                                console.log("ERROR OCCURED: " + JSON.stringify(err));
-                                res.send(err);
-                            } else {
-                                for (var i in locationsResult) {
-                                    var thisIGPlace = locationsResult[i];
+                                        // This location, to send to the client & db
+                                        var location = {
+                                            longitude: thisIGPlace.longitude,
+                                            latitude: thisIGPlace.latitude,
+                                            // coordinates: [thisIGPlace.longitude, thisIGPlace.latitude],
+                                            title: thisIGPlace.name,
+                                            location_id: thisIGPlace.id,
+                                            source: "instagram",
+                                            category: category
+                                        };
+                                        ig_json.push(location);
+                                    }
 
-                                    // This location, to send to the client & db
-                                    var location = {
-                                        longitude: thisIGPlace.longitude,
-                                        latitude: thisIGPlace.latitude,
-                                        // coordinates: [thisIGPlace.longitude, thisIGPlace.latitude],
-                                        title: thisIGPlace.name,
-                                        location_id: thisIGPlace.id,
-                                        source: "instagram",
-                                        category: category
-                                    };
-                                    ig_json.push(location);
+                                    // If this is now 0, we've finished all the requests.
+                                    --fb_places_remaining;
+                                    if (fb_places_remaining <= 0) {
+                                        // console.log(num_services);
+                                        // Append ig_json to json_out
+                                        Array.prototype.push.apply(json_out, ig_json);
+                                        num_services = finishIfAllDoneLoc(num_services, res, json_out);
+                                    }
                                 }
-
-                                // If this is now 0, we've finished all the requests.
-                                --fb_places_remaining;
-                                if (fb_places_remaining <= 0) {
-                                    // console.log(num_services);
-                                    // Append ig_json to json_out
-                                    Array.prototype.push.apply(json_out, ig_json);
-                                    num_services = finishIfAllDoneLoc(num_services, res, json_out);
-                                }
-                            }
-                        });
+                            });
+                    }
                 }
             }
+            graph.search(searchOptions, getIGPlacesFromFBPlaces);
         }
-        graph.search(searchOptions, getIGPlacesFromFBPlaces);
 
         
         // Insert code to get locations from other services here, in the same form
