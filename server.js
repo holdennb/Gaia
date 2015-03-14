@@ -14,7 +14,7 @@ var yelp = require("yelp").createClient({
 
 var dbIP = "128.208.1.140";
 var dbPort = "3000";
-var serverPort = "3000";
+var serverPort = "4000";
 
 // Log the requests
 app.use(logger("dev"));
