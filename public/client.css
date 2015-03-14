@@ -191,8 +191,20 @@ button[type='submit']:hover {
 	padding: 0px 12px 0px 12px;
 }
 
+#info #close {
+	position: absolute;
+	right: 8px;
+	top: 5px;
+	font-size: 1.4em;
+}
+
+#info #close:hover {
+	cursor: pointer;
+}
+
 #info h1 {
 	padding-top: 9px;
+	padding-right: 18px;
 }
 
 #info .ig-link {

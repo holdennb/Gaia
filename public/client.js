@@ -5,6 +5,7 @@ var infowindow = false;
 var markers = [];
 var serverIP = "128.208.1.139";
 var serverPort = "4000";
+var defaultIcon;
 
 $(document).ready(function() {
     var lat = 47.6097;
@@ -14,7 +15,7 @@ $(document).ready(function() {
 
     loadWithCurrentLocation(lat, lng, category);
 
-
+    // Search form
     $("#search-form").submit(function(event) {
         event.preventDefault();
         category = encodeURIComponent($("#category").val());
@@ -71,7 +72,9 @@ $(document).ready(function() {
         }
     });
 
-
+    $("#info #close").click(function() {
+        closeInfoWindow();
+    });
 });
 
 function loadWithCurrentLocation(lat, lng, category) {
@@ -145,7 +148,7 @@ function processRequest(lat, lng, category) {
                 });
 
                 markers.push(marker);
-                var defaultIcon = marker.getIcon();
+                defaultIcon = marker.getIcon();
 
                 // Add click listener to marker
                 google.maps.event.addListener(marker, 'click', function() {
@@ -180,7 +183,7 @@ function processRequest(lat, lng, category) {
                                 // Iterate over other data.servicenames here, in the same form
 
 
-                                updateCenterAndMarker(marker, defaultIcon);
+                                updateCenterAndMarker(marker);
                                 
                             });
                     } else if (!marker.info) {
@@ -202,11 +205,11 @@ function processRequest(lat, lng, category) {
                         // Iterate over other data.servicenames here, in the same form
 
 
-                        updateCenterAndMarker(marker, defaultIcon);
+                        updateCenterAndMarker(marker);
                     } else {
                         console.log("clicked already");
                         // marker has been clicked
-                        updateCenterAndMarker(marker, defaultIcon);
+                        updateCenterAndMarker(marker);
                     }
                 });
             });
@@ -234,18 +237,21 @@ function formatYelp(output, data) {
 function formatInstagram(output, data) {
     output += "<h3>Instagram posts:</h3>";
     $.each(data, function(i, post) {
-        output += "<a class='ig-link' target='_blank' href='" +
-            post.link + "'><img src='" +
-            post.image_url + 
-            "' /></a>";
+        if (post.image_url) {
+            output += "<a class='ig-link' target='_blank' href='" +
+                post.link + "'><img src='" +
+                post.image_url + 
+                "' /></a>";
+            }
     });
     return output;
 }
 
-function updateCenterAndMarker(marker, defaultIcon) {
+function updateCenterAndMarker(marker) {
     var curCenter = map.getCenter();
     $("#map").addClass("with-info");
-    $("#info").show().html(marker.info);
+    $("#info-container").html(marker.info);
+    $("#info").show();
     google.maps.event.trigger(map, 'resize');
     map.setCenter(curCenter);
 
@@ -257,6 +263,18 @@ function updateCenterAndMarker(marker, defaultIcon) {
         scaledSize: new google.maps.Size(22, 40),
         url: "highlighted.png"
     });
+}
+
+function closeInfoWindow() {
+    var curCenter = map.getCenter();
+    $("#map").removeClass("with-info");
+    $("#info").hide();
+    google.maps.event.trigger(map, 'resize');
+    map.setCenter(curCenter);
+
+    for (var i = 0; i < markers.length; i++) {
+        markers[i].setIcon(defaultIcon);
+    }
 }
 
 function clearMarkers() {
