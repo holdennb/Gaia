@@ -3,8 +3,8 @@
 var map = false;
 var infowindow = false;
 var markers = [];
-var serverIP = "127.0.0.1";
-var serverPort = "3000";
+var serverIP = "128.208.1.139";
+var serverPort = "4000";
 
 $(document).ready(function() {
     var lat = 47.6097;
