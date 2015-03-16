@@ -37,7 +37,7 @@ $(document).ready(function() {
                     + encodeURIComponent(address),
                     function(data) {
                         $("#error p").text("");
-                        console.log(data.results);
+                        // console.log(data.results);
                         if (data.results.length == 1) {
                             // If just one address result, use it
                             locationString = data.results[0].formatted_address.toLowerCase();
@@ -118,6 +118,7 @@ function processRequest(lat, lng, category) {
         map = new google.maps.Map(document.getElementById('map'), mapOptions);
         infowindow = new google.maps.InfoWindow();
     }
+    $("#spinner").show();
 
     // Query server to get JSON for locations
     $.getJSON("http://"  + serverIP + ":" + serverPort
@@ -132,7 +133,7 @@ function processRequest(lat, lng, category) {
             map.setCenter({lat: parseFloat(lat), lng: parseFloat(lng)});
             // Iterate through locations, mapping each
             $.each(data, function(i, place) {
-                console.log(place);
+                // console.log(place);
                 var thisLat, thisLng;
                 if (place.latitude) {
                     thisLng = place.longitude;
@@ -157,10 +158,11 @@ function processRequest(lat, lng, category) {
                 // Add click listener to marker
                 google.maps.event.addListener(marker, 'click', function() {
                     var emptyOrOldMedia = false;
+                    $("#spinner").show();
                     for (var source in marker.media) {
                         if (marker.media.hasOwnProperty(source)
                             && marker.media[source].length <= 1) {
-                            console.log(source);
+                            // console.log(source);
                             emptyOrOldMedia = true;
                         }
                     }
@@ -171,7 +173,7 @@ function processRequest(lat, lng, category) {
                         $.getJSON("http://"  + serverIP + ":" + serverPort
                                 + "/media/" + marker.gaia_id, marker.media,
                             function (data) {
-                                console.log(data);
+                                // console.log(data);
                                 marker.info = "<h1>" + marker.title + "</h1>";
 
                                 // Here I iterate over data.yelp, the array yelp data
@@ -193,7 +195,7 @@ function processRequest(lat, lng, category) {
 
 
                                 updateCenterAndMarker(marker);
-                                
+                                $("#spinner").hide();
                             });
                     } else if (!marker.info) {
                         console.log("has good media");
@@ -202,7 +204,7 @@ function processRequest(lat, lng, category) {
 
                         // Here I iterate over data.yelp, the array yelp data
                         if (marker.media.yelp && marker.media.yelp.length) {
-                            console.log(marker.media);
+                            // console.log(marker.media);
                             marker.info = formatYelp(marker.info, marker.media.yelp);
                         }
 
@@ -215,13 +217,17 @@ function processRequest(lat, lng, category) {
 
 
                         updateCenterAndMarker(marker);
+                        $("#spinner").hide();
                     } else {
                         console.log("clicked already");
                         // marker has been clicked
                         updateCenterAndMarker(marker);
+                        $("#spinner").hide();
                     }
                 });
+
             });
+            $("#spinner").hide();
         });
 }
 
@@ -254,7 +260,7 @@ function formatGoogle(output, data) {
             }
         }
     });
-    console.log(output);
+    // console.log(output);
     return output;
 }
 
@@ -273,7 +279,7 @@ function formatYelp(output, data) {
             });
         }
     });
-    console.log(output);
+    // console.log(output);
     return output;
 }
 
@@ -287,7 +293,7 @@ function formatInstagram(output, data) {
                 "' /></a>";
             }
     });
-    console.log(output);
+    // console.log(output);
     return output;
 }
 
