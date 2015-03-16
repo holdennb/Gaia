@@ -191,6 +191,10 @@ button[type='submit']:hover {
 	padding: 0px 12px 0px 12px;
 }
 
+#info #info-container {
+	height: 100%;
+}
+
 #info #close {
 	position: absolute;
 	right: 8px;
