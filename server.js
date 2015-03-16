@@ -295,7 +295,7 @@ function finishIfAllDoneLoc(num_services, res, json_out) {
             headers: {'content-type': 'application/json'},
             body: JSON.stringify(json_out)
         }, function(err, result, body){
-            // console.log(body);
+            console.log(body);
             var body_json = JSON.parse(body);
             // console.log("body.length: " + body_json.length);
             // console.log(".length: " + .length);
