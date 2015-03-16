@@ -16,7 +16,8 @@ var googlePlaces = new GooglePlaces("AIzaSyDmXeo1F1VjrRLQRVy1iB55lcjfi1keU-g", "
 
 var dbIP = "128.208.1.140";
 var dbPort = "3000";
-var serverPort = "3000";
+var serverPort = process.env.OPENSHIFT_NODEJS_PORT || 8080;
+var serverIP = process.env.OPENSHIFT_NODEJS_IP || "127.0.0.1";
 
 // Log the requests
 app.use(logger("dev"));
@@ -47,8 +48,9 @@ app.get("*", function(req, res){
 });
 
 // Start server
-app.listen(serverPort);
-console.log("Listening on port " + serverPort);
+app.listen(serverPort, serverIP, function() {
+    console.log("Listening on port " + serverPort);
+});
 
 // Request to get locations given a latitude and a longitude
 function getPlaces(req, res) {
