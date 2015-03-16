@@ -1,0 +1,11 @@
+{ "dependencies" :
+  { "express" : "latest"
+  , "fbgraph" : "latest"
+  , "googleplaces" : "latest"
+  , "instagram-node" : "latest"
+  , "morgan" : "latest"
+  , "natural" : "latest"
+  , "request" : "latest"
+  , "yelp" : "latest"
+  }
+}
