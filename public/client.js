@@ -3,9 +3,11 @@
 var map = false;
 var infowindow = false;
 var markers = [];
-// var serverIP = "128.208.1.139";
-var serverIP = "127.0.0.1";
-var serverPort = "3000";
+// var serverIP = "128.208.1.139:";  // attu
+// var serverIP = "127.0.0.1:";      // localhost
+var serverIP = "gaia-holdennb.rhcloud.com";      // openshift
+// var serverPort = "8080";
+var serverPort = "";
 var defaultIcon;
 
 $(document).ready(function() {
@@ -121,7 +123,7 @@ function processRequest(lat, lng, category) {
     $("#spinner").show();
 
     // Query server to get JSON for locations
-    $.getJSON("http://"  + serverIP + ":" + serverPort
+    $.getJSON("http://"  + serverIP + serverPort
             + "/places/" + lat + "/" + lng + "/" + category,
         function (data) {
             // console.log(data);
@@ -170,7 +172,7 @@ function processRequest(lat, lng, category) {
                         // marker hasn't been clicked, and has empty/old media
                         console.log("getting media from service");
                         // Get posts for this location, display them
-                        $.getJSON("http://"  + serverIP + ":" + serverPort
+                        $.getJSON("http://"  + serverIP + serverPort
                                 + "/media/" + marker.gaia_id, marker.media,
                             function (data) {
                                 // console.log(data);
