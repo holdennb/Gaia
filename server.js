@@ -295,19 +295,19 @@ function finishIfAllDoneLoc(num_services, res, json_out) {
             headers: {'content-type': 'application/json'},
             body: JSON.stringify(json_out)
         }, function(err, result, body){
-            console.log(body);
-            var body_json = JSON.parse(body);
-            // console.log("body.length: " + body_json.length);
-            // console.log(".length: " + .length);
-            // console.log("json_out.length: " + json_out.length);
+            console.log(result);
+
             if (err) {
                 console.log(err);
-            } else if (!body_json.error) {
-                // console.log("sending body_json");
-                res.json(body_json);
             } else {
-                // console.log("sending empty");
-                res.json([]);
+                var body_json = JSON.parse(body);
+                if (!body_json.error) {
+                    // console.log("sending body_json");
+                    res.json(body_json);
+                } else {
+                    // console.log("sending empty");
+                    res.json([]);
+                }
             }
         });
     }
