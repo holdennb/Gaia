@@ -14,8 +14,10 @@ var yelp = require("yelp").createClient({
 var GooglePlaces = require("googleplaces");
 var googlePlaces = new GooglePlaces("AIzaSyDmXeo1F1VjrRLQRVy1iB55lcjfi1keU-g", "json");
 
-var dbIP = "128.208.1.140";
-var dbPort = "3000";
+// var dbIP = "128.208.1.140";
+var dbIP = "gaiadb-holdennb.rhcloud.com";
+// var dbPort = ":3000";
+var dbPort = "";
 var serverPort = process.env.OPENSHIFT_NODEJS_PORT || 8080;
 var serverIP = process.env.OPENSHIFT_NODEJS_IP || "127.0.0.1";
 
@@ -71,7 +73,7 @@ function getPlaces(req, res) {
 
     // Query for locations within this range already in the db.
     request({
-        url: "http://" + dbIP + ":" + dbPort + "/gaiadb/filter/box?minlon=" + minlon
+        url: "http://" + dbIP + dbPort + "/gaiadb/filter/box?minlon=" + minlon
                 + "&maxlon=" + maxlon + "&minlat=" + minlat + "&maxlat=" + maxlat
                 + "&category=" + category,
     }, function(err, dbResult, body) {
@@ -305,11 +307,11 @@ function finishIfAllDoneLoc(num_services, res, json_out) {
 
         // Send the found locations to the db
         request.post({
-            uri: "http://" + dbIP + ":" + dbPort + "/gaiadb",
+            uri: "http://" + dbIP + dbPort + "/gaiadb",
             headers: {'content-type': 'application/json'},
             body: JSON.stringify(json_out)
         }, function(err, result, body){
-            console.log("db result from http://" + dbIP + ":" + dbPort + "/gaiadb:");
+            console.log("db result from http://" + dbIP + dbPort + "/gaiadb:");
             console.log(result);
             console.log("db body:");
             console.log(body);
@@ -343,7 +345,7 @@ function finishIfAllDoneMed(num_services, res, client_out, gaia_id) {
         for (var source in client_out) {
             if (client_out.hasOwnProperty(source)) {
                 request.put({
-                    uri: "http://" + dbIP + ":" + dbPort + "/gaiadb/addMedia"
+                    uri: "http://" + dbIP + dbPort + "/gaiadb/addMedia"
                         + "?id=" + gaia_id + "&source=" + source,
                     headers: {'content-type': 'application/json'},
                     body: JSON.stringify(client_out[source])
