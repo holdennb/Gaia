@@ -108,6 +108,7 @@ function getPlaces(req, res) {
         console.log("searching with " + lat + ", " + lng);
         function getIGPlacesFromFBPlaces(err, fb_res) {
             if (err) {
+                console.log("getIGfromFB err");
                 console.log(err);
                 num_services = finishIfAllDoneLoc(num_services, res, []);
                 console.log("num is " + num_services + " in getIFfromFB err");
@@ -138,7 +139,8 @@ function getPlaces(req, res) {
                         ig.location_search({"facebook_places_id": thisFBPlace.id},
                             function(err, locationsResult, remaining, limit) {
                                 if (err) {
-                                    console.log("ERROR OCCURED: " + JSON.stringify(err));
+                                    console.log("igLocSearch err");
+                                    console.log(err);
                                     res.send(err);
                                 } else {
                                     if (locationsResult.length > 0) {
@@ -186,6 +188,7 @@ function getPlaces(req, res) {
 
         function getYelpPlaces(error, data) {
             if (error) {
+                console.log("yelp error");
                 console.log(error);
                 num_services = finishIfAllDoneLoc(num_services, res, []);
                 console.log("num is " + num_services + " in getYelpPlaces err");
@@ -239,6 +242,7 @@ function getPlaces(req, res) {
         };
         function getGooglePlaces(error, response) {
             if (error) {
+                console.log("google error");
                 console.log(error);
                 num_services = finishIfAllDoneLoc(num_services, res, []);
                 console.log("num is " + num_services + " in getGoogle err");
@@ -305,9 +309,13 @@ function finishIfAllDoneLoc(num_services, res, json_out) {
             headers: {'content-type': 'application/json'},
             body: JSON.stringify(json_out)
         }, function(err, result, body){
+            console.log("db result from http://" + dbIP + ":" + dbPort + "/gaiadb:");
             console.log(result);
+            console.log("db body:");
+            console.log(body);
 
             if (err) {
+                console.log("db result error:");
                 console.log(err);
             } else {
                 var body_json = JSON.parse(body);
@@ -343,6 +351,7 @@ function finishIfAllDoneMed(num_services, res, client_out, gaia_id) {
                     // console.log(body);
 
                     if (err) {
+                        console.log("medDBResult err");
                         console.log(err);
                     } else {
                         // console.log(body);
