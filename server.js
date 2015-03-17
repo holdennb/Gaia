@@ -110,6 +110,7 @@ function getPlaces(req, res) {
             if (err) {
                 console.log(err);
                 num_services = finishIfAllDoneLoc(num_services, res, []);
+                console.log("num is " + num_services + " in getIFfromFB err");
                 return;
             }
             // console.log(fb_res);
@@ -125,6 +126,7 @@ function getPlaces(req, res) {
                 if (!fb_res['data'].length && !fb_res['paging']) {
                     // console.log(fb_res);
                     num_services = finishIfAllDoneLoc(num_services, res, []);
+                    console.log("num is " + num_services + " in getIFfromFB empty no paging");
                     return;
                 } else {
                     for (var j in fb_res['data']) {
@@ -163,6 +165,7 @@ function getPlaces(req, res) {
                                         // Append ig_json to json_out
                                         Array.prototype.push.apply(json_out, ig_json);
                                         num_services = finishIfAllDoneLoc(num_services, res, json_out);
+                                        console.log("num is " + num_services + " in igLocSearch");
                                         return;
                                     }
                                 }
@@ -171,6 +174,7 @@ function getPlaces(req, res) {
                 }
             } else {
                 num_services = finishIfAllDoneLoc(num_services, res, json_out);
+                console.log("num is " + num_services + " in getIFfromFB empty");
                 return;
             }
         }
@@ -183,6 +187,7 @@ function getPlaces(req, res) {
             if (error) {
                 console.log(error);
                 num_services = finishIfAllDoneLoc(num_services, res, []);
+                console.log("num is " + num_services + " in getYelpPlaces err");
                 return;
             }
             // console.log(data);
@@ -211,14 +216,15 @@ function getPlaces(req, res) {
                     // If this is now 0, we've finished all the requests.
                     --yelp_remaining;
                     if (yelp_remaining <= 0) {
-
                         num_services = finishIfAllDoneLoc(num_services, res, json_out);
+                        console.log("num is " + num_services + " in getYelp business");
                         return;
                     }
                     // });       
                 }
             } else {
                 num_services = finishIfAllDoneLoc(num_services, res, json_out);
+                console.log("num is " + num_services + " in getYelp empty");
                 return;
             }
         }
@@ -234,6 +240,7 @@ function getPlaces(req, res) {
             if (error) {
                 console.log(error);
                 num_services = finishIfAllDoneLoc(num_services, res, []);
+                console.log("num is " + num_services + " in getGoogle err");
                 return;
             }
             // console.log(response);
@@ -264,12 +271,14 @@ function getPlaces(req, res) {
                     --google_remaining;
                     if (google_remaining <= 0) {
                         num_services = finishIfAllDoneLoc(num_services, res, json_out);
+                        console.log("num is " + num_services + " in getGoogle response");
                         return;
                     }
        
                 }
             } else {
                 num_services = finishIfAllDoneLoc(num_services, res, json_out);
+                console.log("num is " + num_services + " in getGoogle empty");
                 return;
             }
         }
@@ -283,7 +292,7 @@ function getPlaces(req, res) {
 // Takes in # of services, response object, and json_out
 function finishIfAllDoneLoc(num_services, res, json_out) {
     num_services--;
-    console.log(num_services);
+    // console.log(num_services);
     if (num_services == 0) {
         // res.json(json_out);
 
