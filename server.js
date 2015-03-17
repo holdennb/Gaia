@@ -116,6 +116,7 @@ function getPlaces(req, res) {
             // console.log(fb_res);
 
             if(fb_res && fb_res.paging && fb_res.paging.next) {
+                num_services++;
                 graph.get(fb_res.paging.next, getIGPlacesFromFBPlaces);
             }
             // console.log(err);
@@ -126,7 +127,7 @@ function getPlaces(req, res) {
                 if (!fb_res['data'].length && !fb_res['paging']) {
                     // console.log(fb_res);
                     num_services = finishIfAllDoneLoc(num_services, res, []);
-                    console.log("num is " + num_services + " in getIFfromFB empty no paging");
+                    console.log("num is " + num_services + " in getIGfromFB empty no paging");
                     return;
                 } else {
                     for (var j in fb_res['data']) {
@@ -174,7 +175,7 @@ function getPlaces(req, res) {
                 }
             } else {
                 num_services = finishIfAllDoneLoc(num_services, res, json_out);
-                console.log("num is " + num_services + " in getIFfromFB empty");
+                console.log("num is " + num_services + " in getIGfromFB empty");
                 return;
             }
         }
