@@ -4,10 +4,10 @@ var map = false;
 var infowindow = false;
 var markers = [];
 // var serverIP = "128.208.1.139:";  // attu
-// var serverIP = "127.0.0.1:";      // localhost
-var serverIP = "gaia-holdennb.rhcloud.com";      // openshift
-// var serverPort = "8080";
-var serverPort = "";
+var serverIP = "127.0.0.1:";      // localhost
+// var serverIP = "gaia-holdennb.rhcloud.com";      // openshift
+var serverPort = "8080";
+// var serverPort = "";
 var defaultIcon;
 
 $(document).ready(function() {
@@ -135,7 +135,7 @@ function processRequest(lat, lng, category) {
             map.setCenter({lat: parseFloat(lat), lng: parseFloat(lng)});
             // Iterate through locations, mapping each
             $.each(data, function(i, place) {
-                // console.log(place);
+                console.log(place);
                 var thisLat, thisLng;
                 if (place.latitude) {
                     thisLng = place.longitude;
@@ -163,7 +163,7 @@ function processRequest(lat, lng, category) {
                     $("#spinner").show();
                     for (var source in marker.media) {
                         if (marker.media.hasOwnProperty(source)
-                            && marker.media[source].length <= 1) {
+                            && marker.media[source].length < 1) {
                             // console.log(source);
                             emptyOrOldMedia = true;
                         }
@@ -203,6 +203,12 @@ function processRequest(lat, lng, category) {
                         console.log("has good media");
                         // marker hasn't been clicked, but has good media
                         marker.info = "<h1>" + marker.title + "</h1>";
+                        console.log(marker.media);
+
+                        // Here I iterate over data.google, the array if google media
+                        if (marker.media.google && marker.media.google.length) {
+                            marker.info = formatGoogle(marker.info, marker.media.google);
+                        }
 
                         // Here I iterate over data.yelp, the array yelp data
                         if (marker.media.yelp && marker.media.yelp.length) {
@@ -214,7 +220,6 @@ function processRequest(lat, lng, category) {
                         if (marker.media.instagram) {
                             marker.info = formatInstagram(marker.info, marker.media.instagram);
                         }
-                        console.log("past IG");
                         // Iterate over other data.servicenames here, in the same form
 
 
@@ -276,9 +281,13 @@ function formatYelp(output, data) {
                 business.url + "'><img src='" +
                 business.image_url + 
                 "' /></a>";
-            $.each(business.reviews, function(i, review) {
-                output += "<p>" + review.excerpt + "</p>";
-            });
+            if (business.reviews) {
+                $.each(business.reviews, function(i, review) {
+                    output += "<p>" + review.excerpt + "</p>";
+                });
+            } else {
+                output += "<p>" + business.snippet_text + "</p>";
+            }
         }
     });
     // console.log(output);
