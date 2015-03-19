@@ -1,18 +1,20 @@
 DB server API reference:
 
 INSERT/ADD to the DB 
-	1. Insert one item
+	1. Insert one item (This checks if there's a duplicate)
 		POST to http://128.208.1.140:3000/gaiadb with JSON 
 		{"longitude": -122.3179672, "latitude": 47.6549871, "title":"home cafe", "category":["food", "cafe"]}
 
-		***** note that the JSON looks something like this: (All fields below are required) *****
-		 {longitude : float, latitude: float, title: string, category: [string] }
-
-	2. Insert one item and add media element
+	2. Insert one item and add media element (This checks if there's a duplicate)
 		POST to http://128.208.1.140:3000/gaiadb with JSON 
-		{"longitude": -122.3179672, "latitude": 47.6549871, "title":"home cafe", "category":"food", "source":"instagram", "media": [{json1}, {json2}, {json3}]}
+		   {longitude: <float>, 
+			latitude: <float>,
+			title: <string>     ,
+			category: [coffee, cafe...],
+			source:   <source>,     				(optional)
+			media: [{json1}, {json2}, {json3}]      (optional) }
 
-	3. Insert an array of JSON items
+	3. Insert an array of JSON items (This checks if there's a duplicate)
 		POST to http://128.208.1.140:3000/gaiadb with JSON: 
 		[{"coordinates":[40, 30], "title":"home cafe", "category":"food"},{"coordinates":[40, 30], "title":"home cafe", "category":"food”}]
 
