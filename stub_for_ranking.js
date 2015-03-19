@@ -9,11 +9,11 @@ request.get({
 
     // traverse the body... 
 
-    // TO call to update the rank
+    // TODO call to update the rank. change the (id) (value) field below, and maybe the uri
     // var new_rank = 3;
     // 
 	// request.put({
-	//     uri: "http://localhost:3000/itemstest/updateRank?id=550aa4a39af773c7176eaaba&value=0.55",
+	//     uri: "http://128.208.1.140:3000/gaiadb/updateRank?id=550aa4a39af773c7176eaaba&value=0.55",
 	//     headers: {'content-type': 'application/json'},
 	//     body: JSON.stringify('')
 	// }, function(error, result, doc){
