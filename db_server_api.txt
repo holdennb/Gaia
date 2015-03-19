@@ -3,14 +3,14 @@ DB server API reference:
 INSERT/ADD to the DB 
 	1. Insert one item
 		POST to http://128.208.1.140:3000/gaiadb with JSON 
-		{"longitude": -122.3179672, "latitude": 47.6549871, "title":"home cafe", "category":"food"}
+		{"longitude": -122.3179672, "latitude": 47.6549871, "title":"home cafe", "category":["food", "cafe"]}
 
 		***** note that the JSON looks something like this: (All fields below are required) *****
-		 {longitude : <longitude> , latitude: <latitude> , title: <place name>, category: <place types> }
+		 {longitude : float, latitude: float, title: string, category: [string] }
 
 	2. Insert one item and add media element
 		POST to http://128.208.1.140:3000/gaiadb with JSON 
-		{"longitude": -122.3179672, "latitude": 47.6549871, "title":"home cafe", "category":"food", "source":"instagram", "location_id": 1231}
+		{"longitude": -122.3179672, "latitude": 47.6549871, "title":"home cafe", "category":"food", "source":"instagram", "media": [{json1}, {json2}]}
 
 	3. Insert an array of JSON items
 		POST to http://128.208.1.140:3000/gaiadb with JSON: 
@@ -72,7 +72,7 @@ QUERY from the DB
 
 Test API calls for Jacqueline: ** remember to put '' around the URL
 POST 
-curl -H "Content-Type: application/json" -X POST -d '{"latitude":40, "longitude":30, "title":"home cafe", "category":"food", "source":"instagram", "location_id": 1231}' http://127.0.0.1:3001/itemstest
+curl -H "Content-Type: application/json" -X POST -d '{"latitude":40, "longitude":30, "title":"home cafe", "category":["food", "cafe"], "source":"instagram", "location_id": 1231}' http://127.0.0.1:3001/itemstest
 
 curl -H "Content-Type: application/json" -X POST -d '[{"coordinates":[40, 30], "title":"home cafe", "category":"food", "source":"instagram", "location_id": 1231},{"coordinates":[40, 30], "title":"home cafe", "category":"food", "source":"instagram", "location_id": 1231}]' http://127.0.0.1:3001/itemstest
 
