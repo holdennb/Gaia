@@ -124,3 +124,11 @@ REMOVE
 curl "http://127.0.0.1:3001/test/removeCollection"
 
 curl "http://128.208.1.140:3000/gaia/removeCollection"
+
+
+
+PUT
+curl -H "Content-Type: application/json" -X PUT -d '{}' 'http://localhost:3000/itemstest/updateRank?id=550a78cf8029f27c169d9b32&value=14'
+
+curl -H "Content-Type: application/json" -X PUT -d '{}' 'http://localhost:3000/itemstest/incrementRank??id=550a78cf8029f27c169d9b32&incvalue=2
+
