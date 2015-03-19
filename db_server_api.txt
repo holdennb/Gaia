@@ -1,5 +1,9 @@
 DB server API reference:
 
+UPDATE rank to the DB
+	1. Give a new Rank
+		PUT to http://128.208.1.140:3000/gaiadb/updateRank?id=<id>&value=<new_rank>
+
 INSERT/ADD to the DB 
 	1. Insert one item (This checks if there's a duplicate)
 		POST to http://128.208.1.140:3000/gaiadb with JSON 
@@ -48,6 +52,11 @@ QUERY from the DB
 		http://128.208.1.140:3000/gaiadb?format=json
 		OR
 		http://128.208.1.140:3000/gaiadb?format=table
+
+	3. Get TOP X
+		GET to
+		http://128.208.1.140:3000/gaiadb/filter/top?minlat=<minlat>&maxlat=<maxlat>&minlon=<minlon>&maxlon=<maxlon>&category=<category>&num=<number>
+
 
 
 
@@ -124,3 +133,37 @@ REMOVE
 curl "http://127.0.0.1:3001/test/removeCollection"
 
 curl "http://128.208.1.140:3000/gaia/removeCollection"
+
+
+
+PUT
+curl -H "Content-Type: application/json" -X PUT -d '{}' 'http://localhost:3000/itemstest/updateRank?id=550a78cf8029f27c169d9b32&value=14'
+
+curl -H "Content-Type: application/json" -X PUT -d '{}' 'http://localhost:3000/itemstest/incrementRank?id=550a78cf8029f27c169d9b32&incvalue=2'
+
+
+http://localhost:3000/itemstest/filter/top?minlat=0&maxlat=50&minlon=0&maxlon=50&category=coffee&num=3
+
+
+
+
+
+
+
+,,,,,,,,,,,,
+curl -H "Content-Type: application/json" -X PUT -d '{}' 'http://localhost:3000/itemstest/updateRank?id=550aa4709af773c7176eaab1&value=0.1'
+curl -H "Content-Type: application/json" -X PUT -d '{}' 'http://localhost:3000/itemstest/updateRank?id=550aa4899af773c7176eaab2&value=0.15'
+curl -H "Content-Type: application/json" -X PUT -d '{}' 'http://localhost:3000/itemstest/updateRank?id=550aa4899af773c7176eaab3&value=0.2'
+curl -H "Content-Type: application/json" -X PUT -d '{}' 'http://localhost:3000/itemstest/updateRank?id=550aa48f9af773c7176eaab4&value=0.25'
+curl -H "Content-Type: application/json" -X PUT -d '{}' 'http://localhost:3000/itemstest/updateRank?id=550aa48f9af773c7176eaab5&value=0.3'
+curl -H "Content-Type: application/json" -X PUT -d '{}' 'http://localhost:3000/itemstest/updateRank?id=550aa49c9af773c7176eaab6&value=0.35'
+curl -H "Content-Type: application/json" -X PUT -d '{}' 'http://localhost:3000/itemstest/updateRank?id=550aa49c9af773c7176eaab7&value=0.4'
+curl -H "Content-Type: application/json" -X PUT -d '{}' 'http://localhost:3000/itemstest/updateRank?id=550aa4a09af773c7176eaab8&value=0.45'
+curl -H "Content-Type: application/json" -X PUT -d '{}' 'http://localhost:3000/itemstest/updateRank?id=550aa4a09af773c7176eaab9&value=0.5'
+curl -H "Content-Type: application/json" -X PUT -d '{}' 'http://localhost:3000/itemstest/updateRank?id=550aa4a39af773c7176eaaba&value=0.55'
+curl -H "Content-Type: application/json" -X PUT -d '{}' 'http://localhost:3000/itemstest/updateRank?id=550aa4a39af773c7176eaabb&value=0.6'
+curl -H "Content-Type: application/json" -X PUT -d '{}' 'http://localhost:3000/itemstest/updateRank?id=550aa4a89af773c7176eaabc&value=0.90'
+curl -H "Content-Type: application/json" -X PUT -d '{}' 'http://localhost:3000/itemstest/updateRank?id=550aa4a89af773c7176eaabd&value=0.83'
+
+
+

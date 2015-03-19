@@ -9,14 +9,15 @@ var serverIP = "127.0.0.1:";      // localhost
 var serverPort = "8080";
 // var serverPort = "";
 var defaultIcon;
+var lat = 47.6097;
+var lng = -122.3331;
 
 $(document).ready(function() {
-    var lat = 47.6097;
-    var lng = -122.3331;
+    
     var locationString = "Current Location";
     var category = encodeURIComponent($("#category").val());
 
-    loadWithCurrentLocation(lat, lng, category);
+    loadWithCurrentLocation(category);
 
     // Search form
     $("#search-form").submit(function(event) {
@@ -32,7 +33,7 @@ $(document).ready(function() {
             locationString = address.toLowerCase();
             if (locationString == "current location") {
                 console.log("it's current location!");
-                loadWithCurrentLocation(lat, lng, category);
+                loadWithCurrentLocation(category);
             } else {
                 console.log("new other location");
                 $.getJSON("http://maps.googleapis.com/maps/api/geocode/json?address="
@@ -82,7 +83,12 @@ $(document).ready(function() {
     });
 });
 
-function loadWithCurrentLocation(lat, lng, category) {
+$.fn.stars = function() {
+    return this.each(function(i,e){$(e).html($('<span/>').width($(e).text()*13));});
+};
+
+
+function loadWithCurrentLocation(category) {
     if (navigator.geolocation) {
         console.log("nav.geo");
         navigator.geolocation.getCurrentPosition(function(position) {
@@ -241,61 +247,64 @@ function processRequest(lat, lng, category) {
 function formatGoogle(output, data) {
     $.each(data, function(i, place) {
         if (place.rating) {
-            output += "<h3>Google: ("
-                + place.rating + " stars)</h3>";
+            output += "<div class='google-header'><img class='logo' alt='Google' src='google.png' />"
+                + "<span class='stars'>" + place.rating + "</span></div>";
 
-            output += place.formatted_phone_number + "<br />";
-            if (place.website) {
-                output += "<a target='_blank' href='" +
-                    place.website + "'>Website</a>";
+            if (place.formatted_phone_number) {
+                output += place.formatted_phone_number + "&nbsp;&nbsp;|&nbsp;&nbsp;";    
             }
-
-            if (place.opening_hours && place.opening_hours.weekday_text) {
-                output += "<ul>";
-                $.each(place.opening_hours.weekday_text, function(i, day) {
-                    output += "<li>" + day + "</li>";
-                });
-                output += "</ul>";
+            if (place.vicinity) {
+                output += place.vicinity;
+            } else if (place.formatted_address) {
+                output += place.formatted_address;
             }
+            output += "<br />";
 
-            if (place.reviews) {
-                output += "<h4>Reviews:</h4>";
+            if (place.opening_hours && place.opening_hours.open_now != undefined) {
+                output += (place.opening_hours.open_now ? "Open now" : "Closed right now");
+                output += "&nbsp;&nbsp;|&nbsp;&nbsp;";
+            }
+            output += "<a target='_blank' href='" + place.url + "'>View on Google</a>";  
+            
 
-                $.each(place.reviews, function(i, review) {
-                    output += "<p><strong>(" + review.rating + " stars)</strong> " + review.text + "</p>";
-                });
+            if (place.reviews && place.reviews.length) {
+                var snippet = place.reviews[0].text;
+                if (snippet.length <= 210) {
+                    output += "<p class='google-snippet'>\"" + snippet + "\"</p>";
+                } else {
+                    output += "<p class='google-snippet'>\"" + snippet.substring(0, 207) + "...\"</p>";
+                }
             }
         }
     });
-    // console.log(output);
     return output;
 }
 
 function formatYelp(output, data) {
     $.each(data, function(i, business) {
         if (business.image_url) {
-            output += "<h3>Yelp review: ("
-                + business.rating + " stars)</h3>";
+            output += "<div class='yelp-header'><img class='logo' alt='Yelp' src='yelp.png' />"
+                + "<img class='rating' alt='Rating' src='" + business.rating_img_url + "' /></div>";
 
-            output += "<a class='yelp-link' target='_blank' href='" +
+            output += "<a class='yelp-image' target='_blank' href='" +
                 business.url + "'><img src='" +
                 business.image_url + 
                 "' /></a>";
-            if (business.reviews) {
-                $.each(business.reviews, function(i, review) {
-                    output += "<p>" + review.excerpt + "</p>";
-                });
-            } else {
-                output += "<p>" + business.snippet_text + "</p>";
+            if (business.snippet_text) {
+                output += "<p class='yelp-snippet'>\"" + business.snippet_text;
+            } else if (business.reviews && business.reviews.length) {
+                output += "<p class='yelp-snippet'>\"" + business.reviews[0].excerpt;
             }
+            output += "\"<br /><a target='_blank' href='" +
+                business.url + "'>Read more on Yelp</a></p>";
+            output += "<div style='clear:both;'></div>";
         }
     });
-    // console.log(output);
     return output;
 }
 
 function formatInstagram(output, data) {
-    output += "<h3>Instagram posts:</h3>";
+    output += "<div class='ig-header'><img class='logo' alt='Instagram' src='instagram.png' /></div>";
     $.each(data, function(i, post) {
         if (post.image_url) {
             output += "<a class='ig-link' target='_blank' href='" +
@@ -304,7 +313,6 @@ function formatInstagram(output, data) {
                 "' /></a>";
             }
     });
-    // console.log(output);
     return output;
 }
 
@@ -312,6 +320,7 @@ function updateCenterAndMarker(marker) {
     var curCenter = map.getCenter();
     $("#map").addClass("with-info");
     $("#info-container").html(marker.info);
+    $('#info .stars').stars();
     $("#info").show();
     google.maps.event.trigger(map, 'resize');
     map.setCenter(curCenter);
