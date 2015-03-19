@@ -92,10 +92,35 @@ for (var place in array){
 	id = array[place]._id;
 	var rank = [];
 	for(var i = 0; i < sorter.length; i++){
+		var index = arrayObjectIndexOf(sorter[i], id, 'id')
+		if(index == -1){
+			rank.push(-1);
+		}else{
+			var win = 0;
+			for(var j=0; j < index; j++){
+				if(sorter[i][j].rating != sorter[i][index].rating){
+					win++;
+				}
+			}
+			rank.push(win);
+		}
+		
+	}
+	RankingArray[id] = rank;
+}
+/*
+ * for (var place in array){	
+	id = array[place]._id;
+	var rank = [];
+	for(var i = 0; i < sorter.length; i++){
 		rank.push(arrayObjectIndexOf(sorter[i], id, 'id'));
 	}
 	RankingArray[id] = rank;
 }
+*/
+
+
+
 
 //console.log(RankingArray);
 var PEstimatorObj = {};
@@ -115,6 +140,23 @@ for(var i in RankingArray){
 			win += RankingArray[i][j];
 		}
 	}
+	
+	PEstimatorObj[i] = {
+		'win': win,
+		'oldP': win,
+		'newP': 0
+	};
+}
+
+for(var i in RankingArray){
+	var win = 0;
+	for(var j = 0; j < sorter.length; j++){
+		if(RankingArray[i][j] != -1){
+			listContains[j].push(i);
+			win += RankingArray[i][j]/Math.log(sorter[j].length);
+		}
+	}
+	
 	PEstimatorObj[i] = {
 		'win': win,
 		'oldP': win,
@@ -139,7 +181,7 @@ for(p in PEstimatorObj){
 //console.log(PEstimatorObj);
 
 console.log("------------------------Begin calc");
-for(var iter = 0; iter < 100; iter++){
+for(var iter = 0; iter < 25; iter++){
 	for(id in PEstimatorObj){//for each place
 		PEstimatorObj[id]['newP'] = 0;
 		for(var i = 0; i < inputMethods.length; i++){	//for each service
@@ -169,36 +211,35 @@ for(var iter = 0; iter < 100; iter++){
 	}
 }
 //console.log(PEstimatorObj);
-
+var sum = 0;
 for(id in PEstimatorObj){//for each place
-		//console.log(id);
-		//console.log(Math.log(PEstimatorObj[id]['oldP']));
-	var val = 0;
-	if(PEstimatorObj[id]['oldP']==0){
-		
+	sum++;
+	
+	var val = 1;
+
+	for(var j = 0; j < sorter.length; j++){
+		if(RankingArray[id][j] != -1){
+			val *=100;
+		}
 	}
+	//console.log(val);
+	//val *= val;
+	val *= PEstimatorObj[id]['oldP'];
+	
 	
 	request.put({
-	     uri: "http://128.208.1.140:3000/gaiadb/updateRank?id=" + id + "&value=" + PEstimatorObj[id]['oldP'],
+	     uri: "http://128.208.1.140:3000/gaiadb/updateRank?id=" + id + "&value=" + val,
 	     headers: {'content-type': 'application/json'},
 	     //body: JSON.stringify('')
 	 }, function(error, result, doc){
-	     console.log("YAY got back: " + doc);
+	     //console.log("YAY got back: " + doc);
 	 });
 
 }
-	
+console.log(sum);
 console.log("end");
 	
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+
     
 });
