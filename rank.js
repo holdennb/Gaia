@@ -138,61 +138,54 @@ var array = [
 
 
 
-//console.log(array);
-//console.log("------------------------finish print 0");
-
 var instagramSorter = [];
 var yelpSorter = [];
 var googleSorter = [];
 
-var idArray = [];
 
-for (var i in array){
-	if(typeof array[i].id !='undefined'){//expand to do everything
-		idArray.push( array[i].id);
-	}
-	
-	if(typeof array[i].media.instagram !='undefined'){
-		//nsole.log(array[i].media.instagram.length);
-		var rank= { 
-			id:		array[i].id,
-			rating:	array[i].media.instagram.length
-		};
-		instagramSorter.push(rank);
-		//InstagramRanking[array[i].id] = array[i].media.instagram.length;
-	}
-	
-	if(typeof array[i].media.yelp !='undefined'){
-		var rank = { 
-			id: array[i].id,
-			rating:array[i].media.yelp[0].rating
-		};
-		yelpSorter.push(rank);
-	}
-	
-	if(typeof array[i].media.google !='undefined'){
-		//console.log(array[i].media.google[0].rating);
-		var rank = { 
-			id: array[i].id,
-			rating:array[i].media.google[0].rating
-		};
-		//googleRanking[array[i].id] = array[i].media.google[0].rating;
-		googleSorter.push(rank);
-	}
-	
+var inputMethods = [];
+inputMethods.push({mediaSource:'instagram', metric:'length'});
+inputMethods.push({mediaSource:'yelp', metric:'rating'});
+inputMethods.push({mediaSource:'google', metric:'rating'});
 
+console.log(inputMethods);
+
+var sorter = new Array(inputMethods.length);
+var listContains = new Array(inputMethods.length);
+for(var i = 0; i < inputMethods.length; i++){
+	sorter[i] = [];
+	listContains[i] = [];
+}
+
+
+//Separates each location by what meda it has to be used in sorting
+for (var place in array){																	//for every location
+	if(typeof array[place].id !='undefined'){												//check for null												///put into master set, get rid of later
+		for(var src = 0; src < inputMethods.length; src++){	
+			if(typeof array[place].media[inputMethods[src].mediaSource] !='undefined'){		//if the media exists
+				var id = array[place].id;													
+				var rating = 0;
+				if( inputMethods[src].metric == 'length'){
+					rating = array[place].media[inputMethods[src].mediaSource].length
+				}else{
+					rating = array[place].media[inputMethods[src].mediaSource][0].rating
+				}
+				sorter[src].push({'id': id, 'rating': rating});
+			}
+		}
+	}
 }
 
 //Sort it all
-instagramSorter.sort(function(a,b) { return parseFloat(a.rating) - parseFloat(b.rating) } );
-yelpSorter.sort(function(a,b) { return parseFloat(a.rating) - parseFloat(b.rating) } );
-googleSorter.sort(function(a,b) { return parseFloat(a.rating) - parseFloat(b.rating) } );
+for(var i = 0; i < sorter.length; i++){
+	sorter[i].sort(function(a,b) { return parseFloat(a.rating) - parseFloat(b.rating) } );
+}
 
 
-//console.log(instagramSorter);
-//console.log(yelpSorter);
-//console.log(googleSorter);
-//console.log(idArray);
+
+instagramSorter = sorter[0];
+yelpSorter = sorter[1];
+googleSorter = sorter[2];
 
 var RankingArray = {};
 
@@ -204,294 +197,94 @@ function arrayObjectIndexOf(myArray, searchTerm, property) {
 }
 
 //Fills array (-1 means it does not exist)
-for( var i = 0; i < idArray.length; i++){
-	var id = idArray[i];
-	var rank = {
-		igRank: arrayObjectIndexOf(instagramSorter, id, 'id'),
-		yelpRank: arrayObjectIndexOf(yelpSorter, id, 'id'),
-		googleRank: arrayObjectIndexOf(googleSorter, id, 'id')
+/*
+ { a: [ 3, 2, 2 ],
+  b: [ -1, 3, 0 ],
+  c: [ 2, -1, 3 ],
+  d: [ 1, 0, -1 ],
+  e: [ -1, 1, -1 ],
+  f: [ 0, -1, 1 ],
+  g: [ -1, -1, -1 ] }
+*/
+for (var place in array){	
+	id = array[place].id;
+	var rank = [];
+	for(var i = 0; i < sorter.length; i++){
+		rank.push(arrayObjectIndexOf(sorter[i], id, 'id'));
 	}
 	RankingArray[id] = rank;
 }
 
-//console.log(RankingArray);
-
-//Deletes missing media (-1's)
-for(var id in RankingArray){
-	//console.log(id);
-	//console.log(RankingArray[id]);
-	if( RankingArray[id].igRank == -1){
-		delete RankingArray[id].igRank;
-	}
-	
-	if( RankingArray[id].yelpRank == -1){
-		delete RankingArray[id].yelpRank;
-	}
-	
-	if( RankingArray[id].googleRank == -1){
-		delete RankingArray[id].googleRank;
-	}
-	
-}
-
-//console.log(RankingArray);
-
-function isEmpty(obj) {
-    for(var prop in obj) {
-        if(obj.hasOwnProperty(prop))
-            return false;
-    }
-
-    return true;
-}
-//console.log(idArray);
-
-// Array Remove - By John Resig (MIT Licensed)
-Array.prototype.remove = function(from, to) {
-  var rest = this.slice((to || from) + 1 || this.length);
-  this.length = from < 0 ? this.length + from : from;
-  return this.push.apply(this, rest);
-};
-
-//deletes any objects with no media
-for(var id in RankingArray){
-	if(isEmpty(RankingArray[id])){
-		delete RankingArray[id];
-		idArray.remove(idArray.indexOf(id));
-	}
-}
-
 console.log(RankingArray);
-//console.log(idArray);
-
-var totalContests = .5 * instagramSorter.length * (instagramSorter.length-1) * yelpSorter.length * (yelpSorter.length-1) * googleSorter.length * (googleSorter.length-1);
-//console.log(totalContests);
-
 var PEstimatorObj = {};
 
-for(var i = 0; i < idArray.length; i++){
-	var id = idArray[i];
-	var win = 0;
-	//console.log(idArray[i]);
-	if(typeof RankingArray[id].igRank != 'undefined'){
-		win += RankingArray[id].igRank;
-	}
-	if(typeof RankingArray[id].yelpRank != 'undefined'){
-		win += RankingArray[id].yelpRank;
-	}
-	if(typeof RankingArray[id].googleRank != 'undefined'){
-		win += RankingArray[id].googleRank;
-	}
 
-	var LL = {
-		win: win,
-		oldP: win/totalContests,
-		newP: 0
+//creates a list of what place has which service
+/*
+[ [ 'a', 'c', 'd', 'f' ],
+  [ 'a', 'b', 'd', 'e' ],
+  [ 'a', 'b', 'c', 'f' ] ]
+*/
+for(var i in RankingArray){
+	var win = 0;
+	for(var j = 0; j < sorter.length; j++){
+		if(RankingArray[i][j] != -1){
+			listContains[j].push(i);
+			win += RankingArray[i][j];
+		}
+	}
+	PEstimatorObj[i] = {
+		'win': win,
+		'oldP': win,
+		'newP': 0
 	};
-	PEstimatorObj[id] = LL;
+}
+
+console.log(listContains);
+
+//calculate the total number of contests
+var totalContests = 0.5;
+for(var i = 0; i < listContains.length; i++){
+	totalContests *= listContains[i].length * (listContains[i].length-1);
+}
+console.log(totalContests);
+console.log(PEstimatorObj);
+
+for(p in PEstimatorObj){
+	PEstimatorObj[p].oldP = PEstimatorObj[p].oldP / totalContests;
 }
 
 console.log(PEstimatorObj);
 
-
-
 console.log("------------------------Begin calc");
-function sumInverse(Pid, field) {
-	var sum = 0;
-	for(newId in RankingArray){
-		if(Pid != newId){
-			if(RankingArray[newId][field] || RankingArray[newId][field]==0){
-				sum += 1/(PEstimatorObj[newId]['oldP'] + PEstimatorObj[Pid]['oldP']); 
-				//console.log(RankingArray[id][field]);
+for(var iter = 0; iter < 100; iter++){
+	for(id in PEstimatorObj){//for each place
+		PEstimatorObj[id]['newP'] = 0;
+		for(var i = 0; i < inputMethods.length; i++){	//for each service
+			if(RankingArray[id][i]!=-1){				//if the list contains the number
+				//console.log(i);
+				for(var j = 0; j < listContains[i].length; j++){//for every place with that service
+					if(listContains[i][j] != id){			//and they are not the same
+						//console.log(listContains[i][j]);
+						PEstimatorObj[id]['newP'] += 1/(PEstimatorObj[id]['oldP'] + PEstimatorObj[listContains[i][j]]['oldP']); 
+					}
+				}
 			}
 		}
 	}
-	PEstimatorObj[Pid]['newP'] += sum;
-	//console.log(sum);
-}
 
-
-	//Calculate the sum of all inverses
-	for(id in PEstimatorObj){
-		//console.log(RankingArray[id].igRank);
-		if(RankingArray[id].igRank >= 0){
-			//console.log(id + ": ig");
-			sumInverse(id,'igRank');
-		}
-		//console.log(RankingArray[id].yelpRank);
-		if(RankingArray[id].yelpRank >= 0){
-			//console.log(id + ": yp");
-			sumInverse(id,'yelpRank');
-		}
-		//console.log(RankingArray[id].googleRank);
-		if(RankingArray[id].googleRank >=0){
-			//console.log(id + ": gg");
-			sumInverse(id,'googleRank');
-		}
-	}
-
-	console.log(PEstimatorObj);
-
+	//update
 	var Ptotal = 0;
-	for(id in PEstimatorObj){
-		PEstimatorObj[id]['oldP'] = PEstimatorObj[id]['win'] / PEstimatorObj[id]['newP'];
-		PEstimatorObj[id]['newP'] = 0;
-		Ptotal += PEstimatorObj[id]['oldP'];
-	}
-
-	for(id in PEstimatorObj){
-		PEstimatorObj[id]['oldP'] = PEstimatorObj[id]['oldP']/Ptotal;
-	}
-
-	console.log(PEstimatorObj);
-
-for(var i = 0; i < 10; i++){
-	
-		
-	//Calculate the sum of all inverses
-	for(id in PEstimatorObj){
-		//console.log(RankingArray[id].igRank);
-		if(RankingArray[id].igRank >= 0){
-			//console.log(id + ": ig");
-			sumInverse(id,'igRank');
-		}
-		//console.log(RankingArray[id].yelpRank);
-		if(RankingArray[id].yelpRank >= 0){
-			//console.log(id + ": yp");
-			sumInverse(id,'yelpRank');
-		}
-		//console.log(RankingArray[id].googleRank);
-		if(RankingArray[id].googleRank >=0){
-			//console.log(id + ": gg");
-			sumInverse(id,'googleRank');
+	for(id in PEstimatorObj){//for each place
+		if(PEstimatorObj[id]['newP'] != 0){
+			PEstimatorObj[id]['oldP'] = PEstimatorObj[id]['win'] / PEstimatorObj[id]['newP'];
+			Ptotal += PEstimatorObj[id]['oldP'];
 		}
 	}
 
-	//console.log(PEstimatorObj);
-
-	var Ptotal = 0;
-	for(id in PEstimatorObj){
-		PEstimatorObj[id]['oldP'] = PEstimatorObj[id]['win'] / PEstimatorObj[id]['newP'];
-		PEstimatorObj[id]['newP'] = 0;
-		Ptotal += PEstimatorObj[id]['oldP'];
+	for(id in PEstimatorObj){//for each place
+		PEstimatorObj[id]['oldP'] /= Ptotal;
 	}
-
-	for(id in PEstimatorObj){
-		PEstimatorObj[id]['oldP'] = PEstimatorObj[id]['oldP']/Ptotal;
-	}
-
-	//console.log(PEstimatorObj);
 }
-
-console.log(PEstimatorObj);
-console.log("10");
-for(var i = 0; i < 100000; i++){
-	
-		
-	//Calculate the sum of all inverses
-	for(id in PEstimatorObj){
-		//console.log(RankingArray[id].igRank);
-		if(RankingArray[id].igRank >= 0){
-			//console.log(id + ": ig");
-			sumInverse(id,'igRank');
-		}
-		//console.log(RankingArray[id].yelpRank);
-		if(RankingArray[id].yelpRank >= 0){
-			//console.log(id + ": yp");
-			sumInverse(id,'yelpRank');
-		}
-		//console.log(RankingArray[id].googleRank);
-		if(RankingArray[id].googleRank >=0){
-			//console.log(id + ": gg");
-			sumInverse(id,'googleRank');
-		}
-	}
-
-	//console.log(PEstimatorObj);
-
-	var Ptotal = 0;
-	for(id in PEstimatorObj){
-		PEstimatorObj[id]['oldP'] = PEstimatorObj[id]['win'] / PEstimatorObj[id]['newP'];
-		PEstimatorObj[id]['newP'] = 0;
-		Ptotal += PEstimatorObj[id]['oldP'];
-	}
-
-	for(id in PEstimatorObj){
-		PEstimatorObj[id]['oldP'] = PEstimatorObj[id]['oldP']/Ptotal;
-	}
-
-	//console.log(PEstimatorObj);
-}
-
 console.log(PEstimatorObj);
 
-
-
-/*
-  {
-	"id":"a",
-	"rank": "1",
-    "media": {
-      "yelp": [
-        {
-          "rating": 4,
-        }
-      ],
-      "instagram": [
-        {
-          "num_likes": 29,
-        },
-        {
-          "num_likes": 4,
-        },
-        {
-          "num_likes": 10,
-        }
-      ]
-    }
-  },
-  {
-    "title": "Starbucks",
-    "media": {
-      "instagram": [
-        {
-          "num_likes": 29,
-        },
-        {
-          "num_likes": 4,
-        },
-        {
-          "num_likes": 10,
-        },
-        {
-          "num_likes": 6,
-        },
-        {
-          "num_likes": 42,
-        },
-        {
-          "num_likes": 1,
-        }
-      ],
-      "google": [
-        {
-          "rating": 3.8,
-        }
-      ]
-    }
-  },{
-    "title": "Trebant",
-    "media": {
-      "yelp": [
-        {
-          "rating": 4.5,
-        }
-      ],
-      "google": [
-        {
-          "rating": 3.7,
-        }
-      ]
-    }
-  }
-]*/
