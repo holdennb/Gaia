@@ -10,7 +10,7 @@ INSERT/ADD to the DB
 
 	2. Insert one item and add media element
 		POST to http://128.208.1.140:3000/gaiadb with JSON 
-		{"longitude": -122.3179672, "latitude": 47.6549871, "title":"home cafe", "category":"food", "source":"instagram", "media": [{json1}, {json2}]}
+		{"longitude": -122.3179672, "latitude": 47.6549871, "title":"home cafe", "category":"food", "source":"instagram", "media": [{json1}, {json2}, {json3}]}
 
 	3. Insert an array of JSON items
 		POST to http://128.208.1.140:3000/gaiadb with JSON: 
@@ -18,6 +18,7 @@ INSERT/ADD to the DB
 
 	4. Add a media element to that item:
 		PUT to http://128.208.1.140:3000/gaiadb/addMedia?id=<the unique id in the database>&source=<source such as instagram> with JSON:
+		*** it can have any fields. *** 
 		{"location_id": 12, 
 		"post_id" 1,
 		"text":"a", 
