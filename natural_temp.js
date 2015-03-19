@@ -8,8 +8,8 @@ console.log(natural.JaroWinklerDistance("dixon","dicksonx"));
 console.log(natural.JaroWinklerDistance('not', 'same'));
 
 console.log("test for Gaia");
-var s1 = "cafe Herikmer";
-var s2 = "Herikmer's cafe";
+var s1 = "starbucks";
+var s2 = "starbucks uvillage";
 var s1stem = s1.tokenizeAndStem().sort();
 var s2stem = s2.tokenizeAndStem().sort();
 console.log("just string: " + natural.JaroWinklerDistance(s1, s2));
