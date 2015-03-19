@@ -216,6 +216,18 @@ button[type='submit']:hover {
 #info h1 {
 	padding-top: 9px;
 	padding-right: 18px;
+	border-bottom: 1px solid #D8D8D8;
+	padding-bottom: 7px;
+}
+
+#info .ig-header {
+	margin: 20px 0px 7px 0px;
+}
+
+#info .ig-header .logo {
+	height: 34px;
+	margin-right: 12px;
+	margin-left: 9px;
 }
 
 #info .ig-link {
@@ -224,7 +236,67 @@ button[type='submit']:hover {
 }
 
 #info .ig-link img {
-	height: 100px;
+	height: 86px;
 	padding: 2px;
 }
+
+#info .yelp-header {
+	margin: 14px 0px 7px 0px;
+}
+
+#info .yelp-header .logo {
+	height: 48px;
+	vertical-align: baseline;
+	margin-right: 11px;
+	margin-left: 6px;
+}
+
+#info .yelp-header .rating {
+	height: 15px;
+	vertical-align: super;
+}
+
+#info .yelp-image {
+	float: left;
+	margin-right: 11px;
+}
+
+#info a {
+	color: #819470;
+}
+
+#info .google-header {
+	margin: 17px 0px 6px 0px;
+}
+
+#info .google-header .logo {
+	height: 40px;
+	vertical-align: middle;
+	margin-right: 19px;
+	margin-left: 5px;
+}
+
+#info .google-header .stars {
+	vertical-align: sub;
+}
+
+#info .google-snippet {
+	margin-top: 15px;
+}
+
+#info span.stars, #info span.stars > * {
+    display: inline-block;
+    background: url("stars.png") 0 -13px repeat-x;
+    width: 65px;
+  	height: 13px;
+  	font-size: 0px;
+}
+
+#info span.stars > * {
+    max-width: 65px;
+    background-position: 0 0;
+}
+
+
+
 
