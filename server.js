@@ -14,10 +14,10 @@ var yelp = require("yelp").createClient({
 var GooglePlaces = require("googleplaces");
 var googlePlaces = new GooglePlaces("AIzaSyDmXeo1F1VjrRLQRVy1iB55lcjfi1keU-g", "json");
 
-// var dbIP = "128.208.1.140";
-var dbIP = "gaiadb-holdennb.rhcloud.com";
-// var dbPort = ":3000";
-var dbPort = "";
+var dbIP = "128.208.1.140";
+// var dbIP = "gaiadb-holdennb.rhcloud.com";
+var dbPort = ":3000";
+// var dbPort = "";
 var serverPort = process.env.OPENSHIFT_NODEJS_PORT || 8080;
 var serverIP = process.env.OPENSHIFT_NODEJS_IP || "127.0.0.1";
 
@@ -66,15 +66,23 @@ function getPlaces(req, res) {
     var lng = parseFloat(req.params.lng);
     var category = req.params.category;
 
-    var minlon = lng - 5 * 0.00898311175;   // 5 km
-    var maxlon = lng + 5 * 0.00898311175;
-    var minlat = lat - 5 * 0.00898311175;   // .00004 = about 5 m
-    var maxlat = lat + 5 * 0.00898311175;
+    var km = 0.00898311175;
+    var minlon_close = lng - 2 * km;   // 2 km
+    var maxlon_close = lng + 2 * km;
+    var minlat_close = lat - 2 * km;   // .00004 = about 2 m
+    var maxlat_close = lat + 2 * km;
+    var minlon = lng - 4 * km;   // 4 km
+    var maxlon = lng + 4 * km;
+    var minlat = lat - 4 * km;   // .00004 = about 4 m
+    var maxlat = lat + 4 * km;
 
     // Query for locations within this range already in the db.
-    request({
-        url: "http://" + dbIP + dbPort + "/gaiadb/filter/box?minlon=" + minlon
+    console.log("http://" + dbIP + dbPort + "/gaiadb/filter/box?minlon=" + minlon
                 + "&maxlon=" + maxlon + "&minlat=" + minlat + "&maxlat=" + maxlat
+                + "&category=" + category);
+    request({
+        url: "http://" + dbIP + dbPort + "/gaiadb/filter/box?minlon=" + minlon_close
+                + "&maxlon=" + maxlon_close + "&minlat=" + minlat_close + "&maxlat=" + maxlat_close
                 + "&category=" + category,
     }, function(err, dbResult, body) {
         if (err) {
@@ -83,29 +91,40 @@ function getPlaces(req, res) {
             return;
         } else {
             // console.log(dbResult);
-            // var body = JSON.parse(dbResult.body);
-            // if (body.length) {
-            //     console.log("found data.");
-            //     res.json(body);
-            //     return;
-            // } else {
+            var body = JSON.parse(dbResult.body);
+            if (body.length) {
+                console.log("found data.");
+                request({
+                    url: "http://" + dbIP + dbPort + "/gaiadb/filter/box?minlon=" + minlon
+                            + "&maxlon=" + maxlon + "&minlat=" + minlat + "&maxlat=" + maxlat
+                            + "&category=" + category,
+                }, function(err, dbResult, body) {
+                    if (err) {
+                        console.log("Got error: " + err);
+                        getPlacesFromServices();
+                        return;
+                    } else {
+                        res.json(JSON.parse(body));
+                    }
+                });
+            } else {
                 console.log("didn't find data. searching.");
                 getPlacesFromServices();
-            // }
+            }
         }
     });
 
     function getPlacesFromServices() {
         // console.log("NEW REQUEST -------");
         var json_out = [];
-        var num_services = 1;
+        var num_services = 3;
 
         // Request to get Instagram locations (from Facebook places) given certain options.
         var searchOptions = {
             q:     category,
             type:  "place",
             center: lat + "," + lng,
-            distance: "5000"
+            distance: "4000"
         };
         console.log("searching with " + lat + ", " + lng);
         function getIGPlacesFromFBPlaces(err, fb_res) {
@@ -160,7 +179,7 @@ function getPlaces(req, res) {
                                                 // coordinates: [thisIGPlace.longitude, thisIGPlace.latitude],
                                                 title: thisIGPlace.name,
                                                 // location_id: ig_place_id,
-                                                // source: "instagram",
+                                                source: "instagram",
                                                 category: [category]
                                             };
 
@@ -192,9 +211,7 @@ function getPlaces(req, res) {
                                                                 posts.push(post);
                                                             }
                                                         }
-                                                        location.media = {
-                                                            instagram: posts
-                                                        };
+                                                        location.media = posts;
                                                         ig_json.push(location);
                                                     }
                                                     --ig_places_remaining;
@@ -235,7 +252,7 @@ function getPlaces(req, res) {
                 return;
             }
         }
-        // graph.search(searchOptions, getIGPlacesFromFBPlaces);
+        graph.search(searchOptions, getIGPlacesFromFBPlaces);
         
         // Insert code to get locations from other services here, in the same form
         //  (but hopefully simpler because of FB/IG thing) as above. Increment num_services
@@ -257,7 +274,7 @@ function getPlaces(req, res) {
 
                     // console.log(thisPlace);
                     if (thisPlace.location.coordinate) {
-                        console.log(thisPlace);
+                        // console.log(thisPlace);
                         var location = {
                             // coordinates: [body.results[0].geometry.location.lng,
                             //     body.results[0].geometry.location.lat],
@@ -265,9 +282,9 @@ function getPlaces(req, res) {
                             latitude: thisPlace.location.coordinate.latitude,
                             title: thisPlace.name,
                             // location_id: thisPlace.id,
-                            // source: "yelp",
+                            source: "yelp",
                             category: [category],
-                            media: {yelp: [thisPlace]}
+                            media: [thisPlace]
                         };
 
                         if (thisPlace.categories) {
@@ -295,13 +312,14 @@ function getPlaces(req, res) {
                 return;
             }
         }
-        // yelp.search({term: category, ll: lat + "," + lng}, getYelpPlaces);
+        yelp.search({term: category, ll: lat + "," + lng}, getYelpPlaces);
 
 
         var googleParams = {
             location: [lat, lng],
-            radius: 5000,
-            keyword: category
+            radius: 4000,
+            keyword: category,
+            extensions: "review_summary"
         };
         function getGooglePlaces(error, response) {
             if (error) {
@@ -326,24 +344,22 @@ function getPlaces(req, res) {
                             latitude: thisPlace.geometry.location.lat,
                             title: thisPlace.name,
                             // location_id: thisPlace.reference,
-                            // source: "google",
+                            source: "google",
                             category: [category]
                         };
                         
                         if (thisPlace.types) {
                             location.category = location.category.concat(thisPlace.types);
                         }
-                        console.log(location);
+                        // console.log(location);
                         (function(location) {
                             googlePlaces.placeDetailsRequest({reference: thisPlace.reference},
                             function(error, response) {
                                 if (!error && response.result) {
                                     var post = response.result;
-                                    location.media = {
-                                        google: [post]
-                                    };
+                                    location.media = [post];
                                     google_json.push(location);
-                                    console.log(location);
+                                    // console.log(location);
                                 }
                                 // If this is now 0, we've finished all the requests.
                                 --google_remaining;
@@ -377,45 +393,78 @@ function getPlaces(req, res) {
 
         
     }
-}
 
-// Takes in # of services, response object, and json_out
-function finishIfAllDoneLoc(num_services, res, json_out) {
-    num_services--;
-    // console.log(num_services);
-    if (num_services == 0) {
-        res.json(json_out);
+    // Takes in # of services, response object, and json_out
+    function finishIfAllDoneLoc(num_services, res, json_out) {
+        num_services--;
+        // console.log(num_services);
+        if (num_services == 0) {
+            // res.json(json_out);
 
-        // console.log("posting data: " + JSON.stringify(json_out));
+            // console.log("posting data: \n\n" + JSON.stringify(json_out));
 
-        // Send the found locations to the db
-        /*request.post({
-            uri: "http://" + dbIP + dbPort + "/gaiadb",
-            headers: {'content-type': 'application/json'},
-            body: JSON.stringify(json_out)
-        }, function(err, result, body){
-            // console.log("db result from http://" + dbIP + dbPort + "/gaiadb:");
-            // console.log(result);
-            // console.log("db body:");
-            // console.log(body);
+            // Send the found locations to the db
+            // var testString = ' [ { "longitude": -122.313393,    "latitude": 47.669872,    "title": "Herkimer Coffee",    "category": [      "Coffee",      "coffee"    ],    "media": {      "yelp": [        {          "is_claimed": false,          "distance": 1857.7573420339,          "mobile_url": "http:\/\/m.yelp.com\/biz\/herkimer-coffee-seattle-2",          "rating_img_url": "http:\/\/s3-media4.fl.yelpcdn.com\/assets\/2\/www\/img\/c2f3dd9799a5\/ico\/stars\/v1\/stars_4.png",          "review_count": 102,          "name": "Herkimer Coffee",          "snippet_image_url": "http:\/\/s3-media3.fl.yelpcdn.com\/photo\/oxffqsJTLSKvRzcf_oi9Aw\/ms.jpg",          "rating": 4,          "url": "http:\/\/www.yelp.com\/biz\/herkimer-coffee-seattle-2",          "location": {            "cross_streets": "56th St & N Cowen Pl",            "city": "Seattle",            "display_address": [              "5611 University Way NE",              "University District",              "Seattle, WA 98105"            ],            "geo_accuracy": 8,            "neighborhoods": [              "University District"            ],            "postal_code": "98105",            "country_code": "US",            "address": [              "5611 University Way NE"            ],            "coordinate": {              "latitude": 47.669872,              "longitude": -122.313393            },            "state_code": "WA"          },          "phone": "2065255070",          "snippet_text": "Every Seattleite has a favorite coffee shop that is not Starbucks; this is mine. I spent a good portion of my summer here working on medical school...",          "image_url": "http:\/\/s3-media2.fl.yelpcdn.com\/bphoto\/1GUl1HsFoiP8aO4EQY06HQ\/ms.jpg",          "categories": [            [              "Coffee & Tea",              "coffee"            ]          ],          "display_phone": "+1-206-525-5070",          "rating_img_url_large": "http:\/\/s3-media2.fl.yelpcdn.com\/assets\/2\/www\/img\/ccf2b76faa2c\/ico\/stars\/v1\/stars_large_4.png",          "id": "herkimer-coffee-seattle-2",          "is_closed": false,          "rating_img_url_small": "http:\/\/s3-media4.fl.yelpcdn.com\/assets\/2\/www\/img\/f62a5be2f902\/ico\/stars\/v1\/stars_small_4.png"        }      ]    }  },{    "longitude": -122.313159592,    "latitude": 47.669815282,    "title": "Herkimer Coffee",    "category": [      "Coffee",      "Coffee Shop"    ],    "media": {      "instagram": [        {          "location_id": 238300892,          "post_id": "939255055658275729_16040019",          "text": "Jesse and Liz at #herkimercoffee. These two are hitchin up this summer. Were so happy to steal some small moments with them.",          "image_url": "http:\/\/scontent.cdninstagram.com\/hphotos-xfa1\/t51.2885-15\/e15\/11055518_701739366601174_978749578_n.jpg",          "link": "https:\/\/instagram.com\/p\/0I538qAFOR\/",          "num_likes": 29,          "date": "Thu Mar 12 2015 12:19:09 GMT-0700 (PDT)"        },        {          "location_id": 238300892,          "post_id": "939188184456032635_414724027",          "text": "#sister #babe in #Seattle",          "image_url": "http:\/\/scontent.cdninstagram.com\/hphotos-xfa1\/t51.2885-15\/e15\/11049353_1059442707405878_2063409850_n.jpg",          "link": "https:\/\/instagram.com\/p\/0Iqq1_vvF7\/",          "num_likes": 22,          "date": "Thu Mar 12 2015 10:06:17 GMT-0700 (PDT)"        }      ]    }  }]';
 
-            if (err) {
-                console.log("db result error:");
-                console.log(err);
-            } else {
-                var body_json = JSON.parse(body);
-                if (!body_json.error) {
-                    // console.log("sending body_json");
-                    res.json(body_json);
+            request.post({
+                uri: "http://" + dbIP + dbPort + "/gaiadb",
+                // uri: "http://108.179.185.9:3000/itemstest",
+                headers: {'content-type': 'application/json'},
+                body: JSON.stringify(json_out)
+                // body: testString
+            }, function(err, result, body){
+                // console.log("db result from http://" + dbIP + dbPort + "/gaiadb:");
+                // console.log(result);
+                // console.log("db body:");
+                // console.log(body);
+    /*
+                if (err) {
+                    console.log("db result error:");
+                    console.log(err);
                 } else {
-                    // console.log("sending empty");
-                    res.json([]);
-                }
-            }
-        });*/
+                    var body_json = JSON.parse(body);
+                    if (!body_json.error) {
+                        // console.log("sending body_json");
+                        res.json(body_json);
+                    } else {
+                        // console.log("sending empty");
+                        res.json([]);
+                    }
+                }*/
+
+                // Query for locations within this range already in the db.
+                console.log("http://" + dbIP + dbPort + "/gaiadb/filter/box?minlon=" + minlon
+                            + "&maxlon=" + maxlon + "&minlat=" + minlat + "&maxlat=" + maxlat
+                            + "&category=" + category);
+                request({
+                    url: "http://" + dbIP + dbPort + "/gaiadb/filter/box?minlon=" + minlon
+                            + "&maxlon=" + maxlon + "&minlat=" + minlat + "&maxlat=" + maxlat
+                            + "&category=" + category,
+                }, function(err, dbResult, body) {
+                    if (err || !body || !body.length) {
+                        // console.log("Got error: " + err);
+                        res.json([]);
+                    } else {
+                        // console.log(dbResult);
+                        // var body = JSON.parse(dbResult.body);
+                        // if (body.length) {
+                        //     console.log("found data.");
+                        console.log(body);
+                            res.json(JSON.parse(body));
+                        //     return;
+                        // } else {
+                            // console.log("didn't find data. searching.");
+                            // getPlacesFromServices();
+                        // }
+                    }
+                });
+            });
+        }
+        return num_services;
     }
-    return num_services;
 }
+
+
 
 // Takes in # of services, response object, client_out, and  
 function finishIfAllDoneMed(num_services, res, client_out, gaia_id) {
