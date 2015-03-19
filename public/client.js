@@ -3,9 +3,11 @@
 var map = false;
 var infowindow = false;
 var markers = [];
-// var serverIP = "128.208.1.139";
-var serverIP = "127.0.0.1";
-var serverPort = "3000";
+// var serverIP = "128.208.1.139:";  // attu
+var serverIP = "127.0.0.1:";      // localhost
+// var serverIP = "gaia-holdennb.rhcloud.com";      // openshift
+var serverPort = "8080";
+// var serverPort = "";
 var defaultIcon;
 
 $(document).ready(function() {
@@ -23,8 +25,8 @@ $(document).ready(function() {
         var address = $("#address").val();
         console.log(category);
         console.log(address);
-        console.log(lat);
-        console.log(lng);
+        // console.log(lat);
+        // console.log(lng);
 
         if (address.toLowerCase() != locationString) {
             locationString = address.toLowerCase();
@@ -37,8 +39,10 @@ $(document).ready(function() {
                     + encodeURIComponent(address),
                     function(data) {
                         $("#error p").text("");
+                        // console.log(data.results);
                         if (data.results.length == 1) {
                             // If just one address result, use it
+                            locationString = data.results[0].formatted_address.toLowerCase();
                             processRequest(data.results[0].geometry.location.lat,
                                 data.results[0].geometry.location.lng, category);
                         } else if (data.results.length > 1) {
@@ -101,8 +105,8 @@ function loadWithCurrentLocation(lat, lng, category) {
 
 // Reload map with current query
 function processRequest(lat, lng, category) {
-    console.log(lat);
-    console.log(lng);
+    console.log("pR" + lat);
+    console.log("pR" + lng);
     $("h1#gaia").removeClass("loaded");
     console.log("procReq");
 
@@ -116,11 +120,13 @@ function processRequest(lat, lng, category) {
         map = new google.maps.Map(document.getElementById('map'), mapOptions);
         infowindow = new google.maps.InfoWindow();
     }
+    $("#spinner").show();
 
     // Query server to get JSON for locations
-    $.getJSON("http://"  + serverIP + ":" + serverPort
+    $.getJSON("http://"  + serverIP + serverPort
             + "/places/" + lat + "/" + lng + "/" + category,
         function (data) {
+            // console.log(data);
             // Clear old markers
             clearMarkers();
             console.log("loaded");
@@ -129,7 +135,7 @@ function processRequest(lat, lng, category) {
             map.setCenter({lat: parseFloat(lat), lng: parseFloat(lng)});
             // Iterate through locations, mapping each
             $.each(data, function(i, place) {
-                // console.log(place.media);
+                console.log(place);
                 var thisLat, thisLng;
                 if (place.latitude) {
                     thisLng = place.longitude;
@@ -154,10 +160,11 @@ function processRequest(lat, lng, category) {
                 // Add click listener to marker
                 google.maps.event.addListener(marker, 'click', function() {
                     var emptyOrOldMedia = false;
+                    $("#spinner").show();
                     for (var source in marker.media) {
                         if (marker.media.hasOwnProperty(source)
-                            && marker.media[source].length <= 1) {
-                            console.log(source);
+                            && marker.media[source].length < 1) {
+                            // console.log(source);
                             emptyOrOldMedia = true;
                         }
                     }
@@ -165,10 +172,10 @@ function processRequest(lat, lng, category) {
                         // marker hasn't been clicked, and has empty/old media
                         console.log("getting media from service");
                         // Get posts for this location, display them
-                        $.getJSON("http://"  + serverIP + ":" + serverPort
+                        $.getJSON("http://"  + serverIP + serverPort
                                 + "/media/" + marker.gaia_id, marker.media,
                             function (data) {
-                                console.log(data);
+                                // console.log(data);
                                 marker.info = "<h1>" + marker.title + "</h1>";
 
                                 // Here I iterate over data.yelp, the array yelp data
@@ -181,20 +188,31 @@ function processRequest(lat, lng, category) {
                                     marker.info = formatInstagram(marker.info, data.instagram);
                                 }
 
+                                // Here I iterate over data.google, the array if google media
+                                if (data.google) {
+                                    marker.info = formatGoogle(marker.info, data.google);
+                                }
+
                                 // Iterate over other data.servicenames here, in the same form
 
 
                                 updateCenterAndMarker(marker);
-                                
+                                $("#spinner").hide();
                             });
                     } else if (!marker.info) {
                         console.log("has good media");
                         // marker hasn't been clicked, but has good media
                         marker.info = "<h1>" + marker.title + "</h1>";
+                        console.log(marker.media);
+
+                        // Here I iterate over data.google, the array if google media
+                        if (marker.media.google && marker.media.google.length) {
+                            marker.info = formatGoogle(marker.info, marker.media.google);
+                        }
 
                         // Here I iterate over data.yelp, the array yelp data
                         if (marker.media.yelp && marker.media.yelp.length) {
-                            console.log(marker.media);
+                            // console.log(marker.media);
                             marker.info = formatYelp(marker.info, marker.media.yelp);
                         }
 
@@ -202,19 +220,55 @@ function processRequest(lat, lng, category) {
                         if (marker.media.instagram) {
                             marker.info = formatInstagram(marker.info, marker.media.instagram);
                         }
-                        console.log("past IG");
                         // Iterate over other data.servicenames here, in the same form
 
 
                         updateCenterAndMarker(marker);
+                        $("#spinner").hide();
                     } else {
                         console.log("clicked already");
                         // marker has been clicked
                         updateCenterAndMarker(marker);
+                        $("#spinner").hide();
                     }
                 });
+
             });
+            $("#spinner").hide();
         });
+}
+
+function formatGoogle(output, data) {
+    $.each(data, function(i, place) {
+        if (place.rating) {
+            output += "<h3>Google: ("
+                + place.rating + " stars)</h3>";
+
+            output += place.formatted_phone_number + "<br />";
+            if (place.website) {
+                output += "<a target='_blank' href='" +
+                    place.website + "'>Website</a>";
+            }
+
+            if (place.opening_hours && place.opening_hours.weekday_text) {
+                output += "<ul>";
+                $.each(place.opening_hours.weekday_text, function(i, day) {
+                    output += "<li>" + day + "</li>";
+                });
+                output += "</ul>";
+            }
+
+            if (place.reviews) {
+                output += "<h4>Reviews:</h4>";
+
+                $.each(place.reviews, function(i, review) {
+                    output += "<p><strong>(" + review.rating + " stars)</strong> " + review.text + "</p>";
+                });
+            }
+        }
+    });
+    // console.log(output);
+    return output;
 }
 
 function formatYelp(output, data) {
@@ -227,11 +281,16 @@ function formatYelp(output, data) {
                 business.url + "'><img src='" +
                 business.image_url + 
                 "' /></a>";
-            $.each(business.reviews, function(i, review) {
-                output += "<p>" + review.excerpt + "</p>";
-            });
+            if (business.reviews) {
+                $.each(business.reviews, function(i, review) {
+                    output += "<p>" + review.excerpt + "</p>";
+                });
+            } else {
+                output += "<p>" + business.snippet_text + "</p>";
+            }
         }
     });
+    // console.log(output);
     return output;
 }
 
@@ -245,6 +304,7 @@ function formatInstagram(output, data) {
                 "' /></a>";
             }
     });
+    // console.log(output);
     return output;
 }
 
@@ -270,6 +330,7 @@ function closeInfoWindow() {
     var curCenter = map.getCenter();
     $("#map").removeClass("with-info");
     $("#info").hide();
+    $("#info-container").html("");
     google.maps.event.trigger(map, 'resize');
     map.setCenter(curCenter);
 

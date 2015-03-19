@@ -138,6 +138,13 @@ button[type='submit']:hover {
 	font-weight: bold;
 }
 
+#spinner {
+	display: none;
+	font-size: 1.1em;
+	padding-left: 8px;
+	vertical-align: text-top;
+}
+
 
 /* MAP */
 
@@ -189,6 +196,10 @@ button[type='submit']:hover {
 	/*-webkit-box-shadow: -1px 0px 16px #999;*/
 	width: 450px;
 	padding: 0px 12px 0px 12px;
+}
+
+#info #info-container {
+	height: 100%;
 }
 
 #info #close {
